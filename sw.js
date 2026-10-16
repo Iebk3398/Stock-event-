@@ -1,5 +1,5 @@
 // Hors ligne : l'app et ses bibliothèques sont gardées sur le téléphone.
-const CACHE = "checkout-stock-v7";
+const CACHE = "checkout-stock-v8";
 const FILES = ["./", "index.html", "manifest.json", "lib/exceljs.min.js", "lib/jspdf.umd.min.js",
   "lib/jspdf.plugin.autotable.min.js", "lib/pdf.min.js", "lib/pdf.worker.min.js", "fonts/barlow-condensed-latin-600-normal.woff2", "fonts/barlow-condensed-latin-700-normal.woff2", "fonts/barlow-latin-400-normal.woff2", "fonts/barlow-latin-600-normal.woff2", "fonts/barlow-latin-700-normal.woff2", "fonts/ibm-plex-mono-latin-500-normal.woff2", "fonts/ibm-plex-mono-latin-600-normal.woff2", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES))); self.skipWaiting(); });

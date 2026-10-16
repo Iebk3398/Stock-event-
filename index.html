@@ -251,9 +251,9 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
   const STEPS = [
     { k: "demande", n: 1, title: "Demande", help: "Ce que tu demandes au stock. Touche le type d'un article pour le changer : à rendre, consommable ou hors stock (courses)." },
     { k: "reponse", n: 2, title: "Réponse", help: "Importe la réponse du stock (PDF ou Excel). Tu vois tout de suite ce qui manque ou reste à confirmer." },
-    { k: "retrait", n: 3, title: "Retrait", help: "Au stock : coche ce que tu prends. La quantité préparée se met toute seule, ajuste-la si besoin." },
-    { k: "precheck", n: 4, title: "Pré-check", help: "Sur le lieu, avant de ranger, tout seul : compte ce que tu as. Un manque s'affiche tout de suite, cherche-le avant de partir. Pour les consommables, note seulement le reste à rendre." },
-    { k: "retour", n: 5, title: "Retour", help: "Au stock, avec le responsable : coche ce qui est rendu. La quantité de ton pré-check est proposée, il suffit de confirmer." },
+    { k: "retrait", n: 3, title: "Retrait", help: "Au stock : le compteur affiche ce que le stock a donné. Ajuste avec − / + si besoin, puis coche pour valider." },
+    { k: "precheck", n: 4, title: "Pré-check", help: "Sur le lieu, avant de ranger, tout seul : ajuste le compteur à ce que tu as, puis coche. Un manque s'affiche en rouge. Pour les consommables, note seulement le reste à rendre." },
+    { k: "retour", n: 5, title: "Retour", help: "Au stock, avec le responsable : le compteur reprend ton pré-check. Ajuste si besoin, puis coche ce qui est rendu." },
   ];
   const ICON = {
     back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
@@ -321,7 +321,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
   const isStock = (it) => it.kind !== "hors";
   const inReq = (it) => it.inReq;
   const onlyExtra = (it) => it.extra && !requested(it.voulu);
-  const taken = (it) => isStock(it) && !blank(it.out);
+  const taken = (it) => isStock(it) && !!it.outOk && !blank(it.out);
   const cmp = (a, b) => (isNum(a) && isNum(b) ? toNum(a) - toNum(b) : String(a).trim() === String(b ?? "").trim() ? 0 : NaN);
   function repState(ev, it) {
     if (!isStock(it)) return { k: "hors", label: "Courses", cls: "warn" };
@@ -341,22 +341,26 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     const d = cmp(it.out, expected(it));
     if (d === 0) return { k: "done", label: "", cls: "" };
     if (isNaN(d)) return { k: "diff", label: "À vérifier", cls: "warn" };
-    return { k: "diff", label: (d > 0 ? "+" : "−") + fmt(Math.abs(d)) + " vs prévu", cls: "warn" };
+    return { k: "diff", label: (d > 0 ? "+" : "−") + fmt(Math.abs(d)) + (isNum(it.dispo) && toNum(it.dispo) > 0 ? " vs donné" : " vs demandé"), cls: "warn" };
   }
   function preState(it) {
     if (it.kind === "conso") return blank(it.pre) || (isNum(it.pre) && toNum(it.pre) === 0) ? { k: "done", label: "Consommé", cls: "info" } : { k: "done", label: "Reste " + fmt(it.pre), cls: "info" };
-    if (blank(it.pre)) return { k: "todo", label: "", cls: "" };
+    if (!it.preOk || blank(it.pre)) return { k: "todo", label: "", cls: "" };
     const d = cmp(it.pre, it.out);
     if (d >= 0) return { k: "done", label: d > 0 ? "+" + fmt(d) : "", cls: d > 0 ? "warn" : "" };
     if (isNaN(d)) return { k: "diff", label: "À vérifier", cls: "bad" };
     return { k: "diff", label: "Manque " + fmt(-d), cls: "bad" };
   }
-  const backRef = (it) => (!blank(it.pre) ? it.pre : it.out);
+  const backRef = (it) => (it.preOk && !blank(it.pre) ? it.pre : it.out);
+  // Valeur affichée dans le compteur : la quantité saisie, sinon la valeur proposée.
+  const shown = (it, f) => (!blank(it[f]) ? it[f] : f === "out" ? expected(it) : f === "pre" ? it.out : f === "in" ? backRef(it) : "");
+  // Écart en direct sur une ligne pas encore cochée.
+  function liveDiff(val, ref) { const d = cmp(val, ref); if (!d || isNaN(d)) return ""; return chip({ label: (d > 0 ? "+" : "−") + fmt(Math.abs(d)), cls: d < 0 ? "bad" : "warn" }); }
   // Consommable : le reste compté au pré-check vaut reste rendu tant que le retour ne dit pas autre chose.
   const consoIn = (it) => (blank(it.in) ? it.pre : it.in);
   function backState(it) {
     if (it.kind === "conso") { const v = consoIn(it); return blank(v) || (isNum(v) && toNum(v) === 0) ? { k: "done", label: "Consommé", cls: "info" } : { k: "done", label: "Reste rendu " + fmt(v), cls: "info" }; }
-    if (blank(it.in)) return { k: "todo", label: "", cls: "" };
+    if (!it.inOk || blank(it.in)) return { k: "todo", label: "", cls: "" };
     const d = cmp(it.in, it.out);
     if (d >= 0) return { k: "done", label: d > 0 ? "+" + fmt(d) : "", cls: d > 0 ? "warn" : "" };
     if (isNaN(d)) return { k: "diff", label: "À vérifier", cls: "bad" };
@@ -384,8 +388,8 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     return { total: its.length, done: st.filter((k) => k === "done" || k === "diff").length, issues };
   }
   function currentStep(ev) {
-    if (ev.items.some((i) => i.kind === "durable" && taken(i) && !blank(i.in))) return "retour";
-    if (ev.items.some((i) => i.kind === "durable" && taken(i) && !blank(i.pre))) { const c = stepCount(ev, "precheck"); return c.done >= c.total ? "retour" : "precheck"; }
+    if (ev.items.some((i) => i.kind === "durable" && taken(i) && i.inOk)) return "retour";
+    if (ev.items.some((i) => i.kind === "durable" && taken(i) && i.preOk)) { const c = stepCount(ev, "precheck"); return c.done >= c.total ? "retour" : "precheck"; }
     if (ev.items.some(taken)) { const c = stepCount(ev, "retrait"); return c.done >= c.total ? "precheck" : "retrait"; }
     if (ev.replied) return "reponse";
     return ev.items.some(inReq) ? "reponse" : "demande";
@@ -420,6 +424,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
           out: blank(out) ? "" : out, in: blank(inn) || /^consomm/i.test(String(inn)) ? "" : inn,
           rem: extra ? rem.replace(EXTRA_TAG, "").replace(/^[\s–-]+/, "") : rem, extra, pre: "",
           inReq: requested(voulu) || extra || !blank(out),
+          outOk: !blank(out), preOk: false, inOk: !blank(inn) && !/^consomm/i.test(String(inn)),
         });
       }
     });
@@ -432,7 +437,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
         const it = cands.find((i) => !blank(i.out)) || cands.find((i) => i.inReq) || cands[0];
         if (!it) return; it._suivi = true;
         const k = K[norm(cellVal(row.getCell(H["type"] || 3)))]; if (k) it.kind = k;
-        if (H["pre-check"]) { const v = cellVal(row.getCell(H["pre-check"])); if (!blank(v)) it.pre = /^consomm/i.test(String(v)) ? "" : v; }
+        if (H["pre-check"]) { const v = cellVal(row.getCell(H["pre-check"])); if (!blank(v)) { it.pre = /^consomm/i.test(String(v)) ? "" : v; it.preOk = true; } }
       });
     }
     items.forEach((i) => delete i._suivi);
@@ -506,6 +511,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       if (!it) { ev.items.push(p); if (p.inReq) n++; continue; }
       let touched = false;
       for (const k of ["voulu", "dispo", "out", "pre", "in"]) if (!blank(p[k]) && cmp(p[k], it[k]) !== 0) { it[k] = p[k]; touched = true; }
+      for (const k of ["outOk", "preOk", "inOk"]) if (p[k]) it[k] = true;
       if (!blank(p.dispo)) it.answered = true;
       if (p.extra) it.extra = true;
       if (!it.row && p.row) it.row = p.row;
@@ -560,8 +566,8 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     if (!isStock(it)) return "Hors stock";
     if (taken(it)) {
       if (it.kind === "conso") return backState(it).label;
-      if (!blank(it.in)) return backState(it).label || "Rendu";
-      if (!blank(it.pre)) return preState(it).label ? "Pré-check : " + preState(it).label.toLowerCase() : "Pré-check OK";
+      if (it.inOk) return backState(it).label || "Rendu";
+      if (it.preOk) return preState(it).label ? "Pré-check : " + preState(it).label.toLowerCase() : "Pré-check OK";
       return "Sorti";
     }
     const r = repState(ev, it);
@@ -595,8 +601,8 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       const set = (k, v) => (ws.getCell(r, col(it.sheet, k)).value = v);
       set("voulu", cellOut(requested(it.voulu) ? it.voulu : it.extra ? it.out : it.voulu));
       set("dispo", cellOut(it.dispo));
-      set("out", cellOut(it.out));
-      set("in", taken(it) && it.kind === "conso" ? (blank(consoIn(it)) || toNum(consoIn(it)) === 0 ? "consommé" : cellOut(consoIn(it))) : cellOut(it.in));
+      set("out", cellOut(it.outOk ? it.out : null));
+      set("in", taken(it) && it.kind === "conso" ? (blank(consoIn(it)) || toNum(consoIn(it)) === 0 ? "consommé" : cellOut(consoIn(it))) : cellOut(it.inOk ? it.in : null));
       if (it.extra) set("rem", EXTRA_TAG + (it.rem ? " – " + it.rem : ""));
       else if (it.rem && blank(cellVal(ws.getCell(r, col(it.sheet, "rem"))))) set("rem", it.rem);
     };
@@ -616,7 +622,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     for (const it of ev.items.filter((i) => inReq(i) || taken(i)).sort((a, b) => sortSheets(a.sheet, b.sheet))) {
       const st = finalState(ev, it);
       const rem = [it.extra ? EXTRA_TAG : "", it.rem || ""].filter(Boolean).join(" – ");
-      const r = su.addRow([it.sheet, it.name, KIND[it.kind].label, cellOut(it.voulu), cellOut(it.dispo), cellOut(it.out), cellOut(it.pre), it.kind === "conso" && taken(it) ? (blank(consoIn(it)) || toNum(consoIn(it)) === 0 ? "consommé" : cellOut(consoIn(it))) : cellOut(it.in), st, rem || null]);
+      const r = su.addRow([it.sheet, it.name, KIND[it.kind].label, cellOut(it.voulu), cellOut(it.dispo), cellOut(it.outOk ? it.out : null), cellOut(it.preOk || it.kind === "conso" ? it.pre : null), it.kind === "conso" && taken(it) ? (blank(consoIn(it)) || toNum(consoIn(it)) === 0 ? "consommé" : cellOut(consoIn(it))) : cellOut(it.inOk ? it.in : null), st, rem || null]);
       if (/Manque|manque|Indisponible|confirmer|Pas de réponse|rifier/.test(st)) r.getCell(9).font = { bold: true, color: { argb: "FFB3261E" } };
     }
     su.views = [{ state: "frozen", ySplit: 1 }];
@@ -659,8 +665,8 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       if (step === "demande") { pick = (i) => inReq(i) && isStock(i); head = ["Matériel", "Quantité", "Type"]; rowsOf = (i) => [i.name, fmt(i.voulu), KIND[i.kind].label]; }
       else if (step === "reponse") { const set = new Set(stepItems(ev, "reponse")); pick = (i) => set.has(i) && repState(ev, i).k !== "ok"; head = ["Matériel", "Demandé", "Dispo", "État"]; rowsOf = (i) => [i.name, fmt(i.voulu), fmt(i.dispo), repState(ev, i).label]; }
       else if (step === "retrait") { pick = taken; head = ["Matériel", "Demandé", "Pris", "Type"]; rowsOf = (i) => [i.name + (i.extra ? " (ajout)" : ""), fmt(i.voulu), fmt(i.out), KIND[i.kind].label]; }
-      else if (step === "precheck") { pick = taken; head = ["Matériel", "Sorti", "Compté", "État"]; rowsOf = (i) => [i.name + (i.extra ? " (ajout)" : ""), fmt(i.out), i.kind === "conso" && blank(i.pre) ? "-" : fmt(i.pre), i.kind === "durable" && blank(i.pre) ? "Pas compté" : preState(i).label || "OK"]; }
-      else { pick = taken; head = ["Matériel", "Sorti", "Pré-check", "Rendu", "État"]; rowsOf = (i) => [i.name + (i.extra ? " (ajout)" : ""), fmt(i.out), fmt(i.pre), i.kind === "conso" ? fmt(consoIn(i)) : fmt(i.in), finalState(ev, i)]; }
+      else if (step === "precheck") { pick = taken; head = ["Matériel", "Sorti", "Compté", "État"]; rowsOf = (i) => [i.name + (i.extra ? " (ajout)" : ""), fmt(i.out), i.kind === "conso" && blank(i.pre) ? "-" : fmt(i.pre), i.kind === "durable" && !i.preOk ? "Pas compté" : preState(i).label || "OK"]; }
+      else { pick = taken; head = ["Matériel", "Sorti", "Pré-check", "Rendu", "État"]; rowsOf = (i) => [i.name + (i.extra ? " (ajout)" : ""), fmt(i.out), fmt(i.pre), i.kind === "conso" ? fmt(consoIn(i)) : fmt(i.inOk ? i.in : ""), finalState(ev, i)]; }
       let y = 102; let any = false;
       for (const sh of [...new Set(ev.items.filter(pick).map((i) => i.sheet))].sort(sortSheets)) {
         const its = ev.items.filter((i) => i.sheet === sh && pick(i)); any = true;
@@ -754,17 +760,18 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     if (step === "retrait") {
       const on = taken(it), s = outState(it), r = repState(ev, it), zero = !on && r.k === "zero";
       return `<div class="item${on ? " done" : ""}${zero ? " off" : ""}"><button type="button" class="tick" role="checkbox" aria-checked="${on}" data-tick="${it.id}" aria-label="Pris : ${esc(it.name)}">${ICON.check}</button>
-        <div><div class="name">${esc(it.name)}</div><div class="meta">${onlyExtra(it) ? "" : `<span>Prévu <span class="q">${esc(fmt(expected(it)))}</span></span>`}${r.k !== "ok" && !onlyExtra(it) ? chip(r) : ""}${chip(s)}${it.kind === "conso" ? chip({ label: "Consommable", cls: "info" }) : ""}${rem}</div></div>
-        <div class="side">${stepper(it.id, "out", it.out)}${onlyExtra(it) ? `<button type="button" class="mini" data-unextra="${it.id}">Retirer</button>` : ""}</div></div>`;
+        <div><div class="name">${esc(it.name)}</div><div class="meta">${onlyExtra(it) ? "" : `<span>Demandé <span class="q">${esc(fmt(it.voulu))}</span></span>${isNum(it.dispo) ? `<span>Donné <span class="q">${esc(fmt(it.dispo))}</span></span>` : ""}`}${r.k !== "ok" && !onlyExtra(it) ? chip(r) : ""}${on ? chip(s) : onlyExtra(it) ? "" : liveDiff(shown(it, "out"), expected(it))}${it.kind === "conso" ? chip({ label: "Consommable", cls: "info" }) : ""}${rem}</div></div>
+        <div class="side">${stepper(it.id, "out", shown(it, "out"))}${onlyExtra(it) ? `<button type="button" class="mini" data-unextra="${it.id}">Retirer</button>` : ""}</div></div>`;
     }
     const pre = step === "precheck";
     const f = pre ? "pre" : "in";
     const b = pre ? preState(it) : backState(it);
-    const preMeta = !pre && !blank(it.pre) ? `<span>Pré-check <span class="q">${esc(fmt(it.pre))}</span></span>` : "";
+    const preMeta = !pre && it.preOk && !blank(it.pre) ? `<span>Pré-check <span class="q">${esc(fmt(it.pre))}</span></span>` : "";
     if (it.kind === "conso") return `<div class="item nt"><div><div class="name">${esc(it.name)}</div><div class="meta"><span>Sorti <span class="q">${esc(fmt(it.out))}</span></span>${preMeta}${chip(b)}</div></div><div class="side"><span class="meta" style="margin:0">${pre ? "Reste à rendre" : "Reste rendu"}</span>${stepper(it.id, f, pre ? it.pre : consoIn(it), true)}</div></div>`;
-    const on = b.k !== "todo" && b.cls !== "bad";
+    const on = b.k !== "todo";
+    const live = on ? chip(b) : liveDiff(shown(it, f), it.out);
     return `<div class="item${b.cls === "bad" ? " alert" : on ? " done" : ""}"><button type="button" class="tick" role="checkbox" aria-checked="${on}" data-tick="${it.id}" aria-label="${pre ? "Compté" : "Rendu"} : ${esc(it.name)}">${ICON.check}</button>
-      <div><div class="name">${esc(it.name)}</div><div class="meta"><span>Sorti <span class="q">${esc(fmt(it.out))}</span></span>${preMeta}${chip(b)}</div></div>${stepper(it.id, f, it[f])}</div>`;
+      <div><div class="name">${esc(it.name)}</div><div class="meta"><span>Sorti <span class="q">${esc(fmt(it.out))}</span></span>${preMeta}${live}</div></div>${stepper(it.id, f, shown(it, f))}</div>`;
   }
   function stepSummary(ev, step) {
     if (step === "reponse") {
@@ -785,7 +792,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     if (step === "retour") {
       const its = stepItems(ev, "retour"); const dur = its.filter((i) => i.kind === "durable");
       const miss = dur.filter((i) => backState(i).cls === "bad").length; const todo = dur.filter((i) => backState(i).k === "todo").length;
-      const preDone = dur.some((i) => !blank(i.pre));
+      const preDone = dur.some((i) => i.preOk);
       return `<div class="summary"><div class="g"><b>${dur.length - todo - miss}</b><span>Rendus</span></div><div class="r"><b>${miss}</b><span>Manques</span></div><div><b>${todo}</b><span>À vérifier</span></div><div><b>${its.length - dur.length}</b><span>Consom&shy;mables</span></div></div>
         ${!preDone && dur.length ? `<div class="box info"><b>Pas de pré-check fait.</b>Tu peux quand même contrôler ici, ou faire d'abord le pré-check sur place.<div class="row"><button class="btn" type="button" data-goto="precheck">Aller au pré-check</button></div></div>` : ""}
         ${miss ? `<div class="box bad"><b>${miss} article${miss > 1 ? "s" : ""} manquant${miss > 1 ? "s" : ""}.</b>Vérifie avec le responsable du stock avant de signer le bon de retour.</div>` : ""}`;
@@ -902,22 +909,23 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     if (d.kind) { const it = byId(d.kind); it.kind = KIND_NEXT[it.kind]; setKindPref(it); return changed(); }
     if (d.tick) {
       const it = byId(d.tick);
-      if (view.step === "retrait") { if (taken(it)) { it.out = ""; it.in = ""; it.pre = ""; } else it.out = expected(it); }
-      else if (view.step === "precheck") { const b = preState(it); if (b.k !== "todo" && b.cls !== "bad") it.pre = ""; else it.pre = it.out; }
-      else { const b = backState(it); if (b.k !== "todo" && b.cls !== "bad") it.in = ""; else it.in = cmp(backRef(it), it.in) === 0 && b.cls === "bad" ? it.out : backRef(it); }
+      const f = view.step === "retrait" ? "out" : view.step === "precheck" ? "pre" : "in";
+      const ok = f + "Ok";
+      if (it[ok]) it[ok] = false;
+      else { if (blank(it[f])) it[f] = shown(it, f); it[ok] = true; toast(it.name + " : " + fmt(it[f]) + " ✓"); }
       return changed();
     }
-    if (d.all) { d.all.split(",").forEach((id) => { const it = byId(id); if (!it) return; if (view.step === "retrait") it.out = expected(it); else if (view.step === "precheck") it.pre = it.out; else it.in = backRef(it); }); toast("Groupe coché."); return changed(); }
+    if (d.all) { d.all.split(",").forEach((id) => { const it = byId(id); if (!it) return; const f = view.step === "retrait" ? "out" : view.step === "precheck" ? "pre" : "in"; if (blank(it[f])) it[f] = shown(it, f); it[f + "Ok"] = true; }); toast("Groupe coché."); return changed(); }
     if (d.step) {
       const it = byId(d.id), f = d.field;
-      const ref = f === "in" ? (it.kind === "conso" ? it.pre : backRef(it)) : f === "pre" ? (it.kind === "conso" ? null : it.out) : f === "out" ? expected(it) : f === "dispo" ? it.voulu : null;
-      const base = isNum(it[f]) ? toNum(it[f]) : blank(it[f]) && isNum(ref) ? toNum(ref) : 0;
-      it[f] = Math.max(0, base + (blank(it[f]) && isNum(ref) && f !== "voulu" ? 0 : Number(d.step)));
+      const ref = it.kind === "conso" && (f === "pre" || f === "in") ? (f === "in" ? consoIn(it) : null) : f === "dispo" || f === "voulu" ? null : shown(it, f);
+      const base = isNum(it[f]) ? toNum(it[f]) : isNum(ref) ? toNum(ref) : 0;
+      it[f] = Math.max(0, base + Number(d.step));
       if (f === "dispo") it.answered = true;
       if (f === "voulu") it.inReq = requested(it.voulu) || it.extra || taken(it);
       return changed();
     }
-    if (d.unextra) { const it = byId(d.unextra); it.out = ""; it.in = ""; it.extra = false; it.inReq = requested(it.voulu); if (!it.row && !it.inReq) getEv().items = getEv().items.filter((i) => i !== it); toast("Retiré."); return changed(); }
+    if (d.unextra) { const it = byId(d.unextra); it.out = ""; it.outOk = false; it.in = ""; it.extra = false; it.inReq = requested(it.voulu); if (!it.row && !it.inReq) getEv().items = getEv().items.filter((i) => i !== it); toast("Retiré."); return changed(); }
     if (d.pick) { ui.addSel = d.pick; render(); const f = $("#a-qty"); if (f) f.focus(); return; }
     switch (d.act) {
       case "home": return go({ name: "home" });
@@ -945,7 +953,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       const it = byId(el.dataset.id); const v = el.value.trim(); const f = el.dataset.field;
       it[f] = v === "" ? (f === "voulu" ? null : "") : isNum(v) ? toNum(v) : v;
       if (f === "dispo") it.answered = true;
-      if (f === "out" && v === "") { it.in = ""; it.pre = ""; }
+      if (f === "out" && v === "") it.outOk = false;
       persist(getEv());
     }
   });
@@ -979,7 +987,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       if (!name) { toast("Indique l'article."); return; }
       if (!it) { const sh = $("#a-sheet") ? $("#a-sheet").value : "UST"; it = findItem(ev, sh, name); if (!it) { it = { id: uid(), sheet: sh, row: null, name, kind: kindFor(sh, name), voulu: null, dispo: "", answered: false, out: "", pre: "", in: "", rem: "", extra: false, inReq: false }; ev.items.push(it); } }
       const rem = $("#a-rem").value.trim(); if (rem) it.rem = rem;
-      if (retrait) { it.out = qty; if (!requested(it.voulu)) it.extra = true; if (!isStock(it)) it.kind = "durable"; it.inReq = true; }
+      if (retrait) { it.out = qty; it.outOk = true; if (!requested(it.voulu)) it.extra = true; if (!isStock(it)) it.kind = "durable"; it.inReq = true; }
       else { it.voulu = qty; it.inReq = true; }
       persist(ev, true); toast("Ajouté : " + name + " × " + fmt(qty));
       ui.addQuery = ""; ui.addSel = null; render();
@@ -992,6 +1000,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     ev.items = (ev.items || []).filter((i) => i.source !== "surplace").map((i) => ({
       id: i.id || uid(), sheet: i.sheet, row: i.row || null, name: i.name, kind: i.kind || kindFor(i.sheet, i.name),
       voulu: i.voulu ?? null, dispo: i.dispo ?? "", answered: i.answered ?? !blank(i.dispo), out: i.out ?? "", pre: i.pre ?? "", in: i.conso ? "" : i.in ?? "",
+      outOk: i.outOk ?? !blank(i.out), preOk: i.preOk ?? !blank(i.pre), inOk: i.inOk ?? !blank(i.in),
       rem: i.rem || "", extra: i.extra ?? i.source === "ajout", inReq: i.inReq ?? (requested(i.voulu) || i.source === "ajout" || !blank(i.out)), prevVoulu: i.prevVoulu,
     }));
     ev.replySheets = ev.replySheets || []; return ev;
