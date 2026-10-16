@@ -1,0 +1,1008 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#18222e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stock">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>Stock Événements</title>
+<style>
+@font-face { font-family: "Barlow Condensed"; font-weight: 600; font-style: normal; font-display: swap; src: url("fonts/barlow-condensed-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-weight: 700; font-style: normal; font-display: swap; src: url("fonts/barlow-condensed-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 400; font-style: normal; font-display: swap; src: url("fonts/barlow-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 600; font-style: normal; font-display: swap; src: url("fonts/barlow-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 700; font-style: normal; font-display: swap; src: url("fonts/barlow-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Mono"; font-weight: 500; font-style: normal; font-display: swap; src: url("fonts/ibm-plex-mono-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Mono"; font-weight: 600; font-style: normal; font-display: swap; src: url("fonts/ibm-plex-mono-latin-600-normal.woff2") format("woff2"); }
+
+/* Layout : app mobile d'une main — accueil = événements ; événement = barre du haut + 4 étapes, liste par onglet USNE, barre d'action fixe en bas. */
+:root {
+  --bg: #eef1f4; --surface: #ffffff; --sunk: #f6f8fa;
+  --ink: #18222e; --muted: #5b6878; --line: #d8dee6;
+  --accent: #f2b705; --accent-ink: #2a2100;
+  --good: #1d7a4a; --good-bg: #dff3e7;
+  --warn: #8a5300; --warn-bg: #fdf0d2;
+  --bad: #b3261e;  --bad-bg: #fbe2df;
+  --info: #2a4f86; --info-bg: #e3ebf7;
+  --shadow: 0 1px 2px rgba(24,34,46,.06), 0 4px 14px rgba(24,34,46,.06);
+  --f-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --f-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10151b; --surface: #1a212a; --sunk: #151b22; --ink: #e7ecf2; --muted: #9aa7b6; --line: #2c3641;
+    --accent: #f5c431; --accent-ink: #231b00;
+    --good: #6fd39c; --good-bg: #173527; --warn: #f0b85a; --warn-bg: #3a2c12;
+    --bad: #ff8a80; --bad-bg: #3d1d1b; --info: #9ec0f0; --info-bg: #1c2b40;
+    --shadow: 0 1px 2px rgba(0,0,0,.3); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10151b; --surface: #1a212a; --sunk: #151b22; --ink: #e7ecf2; --muted: #9aa7b6; --line: #2c3641;
+  --accent: #f5c431; --accent-ink: #231b00;
+  --good: #6fd39c; --good-bg: #173527; --warn: #f0b85a; --warn-bg: #3a2c12;
+  --bad: #ff8a80; --bad-bg: #3d1d1b; --info: #9ec0f0; --info-bg: #1c2b40;
+  --shadow: 0 1px 2px rgba(0,0,0,.3); color-scheme: dark;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { padding-top: env(safe-area-inset-top, 0px); }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.4; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--surface); }
+[hidden] { display: none !important; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 760px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 14px; font-weight: 600; min-height: 46px; text-align: center; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.btn.dark { background: var(--ink); color: var(--surface); border-color: transparent; }
+.btn.ghost { background: none; border-color: transparent; }
+.btn.block { width: 100%; }
+.btn:disabled { opacity: .45; cursor: default; }
+.link { border: 0; background: none; padding: 6px 4px; font-size: 13px; font-weight: 600; color: var(--info); }
+
+.appbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); border-bottom: 1px solid var(--line); }
+.appbar .wrap { padding-block: 8px 10px; display: grid; gap: 10px; }
+.appbar-row { display: flex; align-items: center; gap: 6px; min-height: 44px; }
+.back { border: 0; background: none; padding: 8px 8px 8px 0; display: flex; align-items: center; color: var(--muted); }
+.back svg { width: 22px; height: 22px; }
+.ev-title { flex: 1; min-width: 0; }
+.ev-title h1 { margin: 0; font-family: var(--f-display); font-size: 21px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ev-title p { margin: 0; font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.iconbtn { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; flex: none; }
+.iconbtn svg { width: 22px; height: 22px; }
+
+.steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.step { border: 1px solid var(--line); background: var(--sunk); border-radius: 11px; padding: 7px 4px 8px; text-align: left; display: grid; gap: 3px; min-width: 0; }
+.step .top { display: flex; align-items: center; gap: 3px; min-width: 0; }
+.step .num { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-num); font-size: 10.5px; font-weight: 600; background: var(--line); color: var(--ink); flex: none; }
+.step .lbl { font-family: var(--f-display); font-weight: 700; font-size: 14px; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.step .cnt { font-family: var(--f-num); font-size: 10.5px; letter-spacing: -.02em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.step .cnt .x { color: var(--bad); }
+.step .bar { height: 4px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.step .bar i { display: block; height: 100%; background: var(--good); }
+.step[aria-current="step"] { background: var(--surface); border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.step .ok { color: var(--good); font-weight: 700; }
+.step[aria-current="step"] .bar { background: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+
+main.wrap { padding-block: 14px calc(110px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 14px; }
+.intro { margin: 0; color: var(--muted); font-size: 14px; }
+.intro strong { color: var(--ink); }
+.tools { display: grid; gap: 8px; }
+.search { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 14px; min-height: 46px; font-size: 16px; }
+.chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.chips button { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 7px 13px; font-size: 13.5px; font-weight: 600; color: var(--muted); }
+.chips button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.chips .n { font-family: var(--f-num); font-size: 11.5px; margin-left: 4px; opacity: .8; }
+
+.group { display: grid; gap: 6px; }
+.ghead { display: flex; align-items: center; gap: 8px; padding: 0 2px; }
+.ghead .code { font-family: var(--f-num); font-size: 11.5px; background: var(--ink); color: var(--surface); padding: 1px 6px; border-radius: 4px; }
+.ghead h2 { margin: 0; font-family: var(--f-display); font-weight: 700; font-size: 17px; letter-spacing: .05em; text-transform: uppercase; }
+.ghead .cnt { font-family: var(--f-num); font-size: 12px; color: var(--muted); }
+.ghead .link { margin-left: auto; }
+.list { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
+.item { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 10px 10px 8px; border-top: 1px solid var(--line); }
+.item.nt { grid-template-columns: minmax(0, 1fr) auto; padding-left: 14px; }
+.item:first-child { border-top: 0; }
+.item.done { background: color-mix(in srgb, var(--good-bg) 50%, var(--surface)); }
+.item.alert { background: color-mix(in srgb, var(--bad-bg) 55%, var(--surface)); }
+.item.warnbg { background: color-mix(in srgb, var(--warn-bg) 55%, var(--surface)); }
+.item.off { opacity: .55; }
+.tick { width: 42px; height: 42px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); display: grid; place-items: center; padding: 0; }
+.tick svg { width: 22px; height: 22px; opacity: 0; }
+.tick svg path { stroke: var(--surface); }
+.tick[aria-checked="true"] { background: var(--good); border-color: var(--good); }
+.tick[aria-checked="true"] svg { opacity: 1; }
+.name { font-weight: 600; overflow-wrap: anywhere; line-height: 1.25; }
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 10px; font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+.meta .q { font-family: var(--f-num); color: var(--ink); font-weight: 600; }
+.chip { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 1px 8px; border-radius: 99px; letter-spacing: .01em; border: 0; }
+.chip.good { background: var(--good-bg); color: var(--good); }
+.chip.warn { background: var(--warn-bg); color: var(--warn); }
+.chip.bad { background: var(--bad-bg); color: var(--bad); }
+.chip.info { background: var(--info-bg); color: var(--info); }
+.chip.neutral { background: var(--sunk); color: var(--muted); border: 1px solid var(--line); }
+button.chip { cursor: pointer; padding: 3px 9px; }
+button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
+.side { display: grid; gap: 4px; justify-items: end; }
+.stepper { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
+.stepper button { width: 36px; height: 42px; border: 0; background: none; font-size: 20px; font-weight: 600; color: var(--muted); padding: 0; }
+.stepper input { width: 52px; height: 42px; border: 0; border-inline: 1px solid var(--line); text-align: center; font-family: var(--f-num); font-weight: 600; background: var(--surface); font-size: 16px; padding: 0; }
+.stepper.sm input { width: 46px; }
+.mini { border: 0; background: none; font-size: 12px; font-weight: 600; color: var(--muted); padding: 2px; text-decoration: underline; text-underline-offset: 2px; }
+.empty { padding: 24px 18px; text-align: center; color: var(--muted); display: grid; gap: 10px; justify-items: center; }
+.empty strong { color: var(--ink); font-size: 16px; }
+.box { border-radius: 12px; padding: 12px; font-size: 14px; display: grid; gap: 8px; }
+.box.bad { background: var(--bad-bg); color: var(--bad); }
+.box.info { background: var(--info-bg); color: var(--info); }
+.box.warn { background: var(--warn-bg); color: var(--warn); }
+.box .row { display: flex; gap: 8px; flex-wrap: wrap; }
+.box b { font-weight: 700; }
+.summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.summary div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px; display: grid; gap: 1px; }
+.summary b { font-family: var(--f-num); font-size: 18px; }
+.summary span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.summary .g b { color: var(--good); } .summary .w b { color: var(--warn); } .summary .r b { color: var(--bad); }
+
+.actionbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 12; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-top: 1px solid var(--line); }
+.actionbar .wrap { padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: auto 1fr; gap: 8px; }
+.actionbar .wrap.one { grid-template-columns: 1fr; }
+
+.home-head { display: grid; gap: 4px; padding-top: 6px; }
+.home-head .brand { display: flex; align-items: center; gap: 8px; font-family: var(--f-num); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.tape { display: inline-block; width: 16px; height: 16px; border-radius: 3px; background: repeating-linear-gradient(-45deg, var(--accent) 0 4px, var(--ink) 4px 8px); }
+.home-head h1 { margin: 0; font-family: var(--f-display); font-size: 34px; font-weight: 700; text-transform: uppercase; line-height: 1; }
+.flow { display: grid; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); overflow: hidden; }
+.flow div { padding: 10px 12px; display: grid; grid-template-columns: 22px auto 1fr; gap: 10px; align-items: center; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); }
+.flow div:first-child { border-top: 0; }
+.flow b { font-family: var(--f-display); font-size: 14px; text-transform: uppercase; color: var(--ink); letter-spacing: .02em; }
+.flow i { font-style: normal; font-family: var(--f-num); font-size: 11px; color: var(--accent-ink); background: var(--accent); width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; }
+.evcard { width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: grid; gap: 10px; box-shadow: var(--shadow); }
+.evcard .t { display: flex; align-items: baseline; gap: 10px; }
+.evcard h2 { margin: 0; font-size: 18px; font-weight: 700; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.evcard .d { font-family: var(--f-num); font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+.evcard .f { font-size: 12.5px; color: var(--muted); margin-top: -6px; }
+.evcard .next { font-size: 13px; font-weight: 600; color: var(--info); }
+.mini-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+.mini-steps div { display: grid; gap: 4px; min-width: 0; }
+.mini-steps span { font-size: 11px; letter-spacing: -.01em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-steps b { font-family: var(--f-num); color: var(--ink); font-weight: 600; }
+.mini-steps .bar { height: 4px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.mini-steps .bar i { display: block; height: 100%; background: var(--good); }
+.evlist { display: grid; gap: 10px; }
+.section-lbl { margin: 6px 2px 0; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+.scrim { position: fixed; inset: 0; z-index: 40; background: rgba(10,15,20,.45); display: flex; align-items: flex-end; justify-content: center; }
+.sheet { width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto; background: var(--surface); border-radius: 20px 20px 0 0; padding: 8px max(18px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px)); display: grid; gap: 14px; }
+.sheet .grab { width: 40px; height: 5px; border-radius: 99px; background: var(--line); justify-self: center; }
+.sheet h2 { margin: 0; font-family: var(--f-display); font-size: 24px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }
+.sheet h3 { margin: 4px 0 0; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.sheet p { margin: 0; color: var(--muted); font-size: 14px; }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.field { display: grid; gap: 5px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
+.field label, .field .lab { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.field input, .field select { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 12px; min-height: 48px; width: 100%; font-size: 16px; }
+.filepick { width: 100%; border: 2px dashed var(--line); border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px; background: var(--sunk); text-align: left; }
+.filepick svg { width: 28px; height: 28px; color: var(--muted); flex: none; }
+.filepick .fp-txt { flex: 1; min-width: 0; font-size: 14px; }
+.filepick .fp-txt b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.filepick.has { border-style: solid; border-color: var(--good); background: var(--good-bg); }
+.sheet-actions { display: grid; gap: 8px; }
+.menu { display: grid; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.menu button { border: 0; border-top: 1px solid var(--line); background: var(--surface); text-align: left; padding: 13px 14px; display: grid; gap: 1px; }
+.menu button:first-child { border-top: 0; }
+.menu button b { font-weight: 600; }
+.menu button span { font-size: 12.5px; color: var(--muted); }
+.menu button.danger b { color: var(--bad); }
+.results { display: grid; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.results button { border: 0; border-top: 1px solid var(--line); background: var(--surface); text-align: left; padding: 11px 12px; display: flex; gap: 8px; align-items: baseline; }
+.results button:first-child { border-top: 0; }
+.results .s { font-family: var(--f-num); font-size: 11px; color: var(--muted); flex: none; }
+
+.toast { position: fixed; left: 50%; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--surface); padding: 10px 16px; border-radius: 12px; font-weight: 600; z-index: 50; max-width: calc(100% - 32px); box-shadow: var(--shadow); }
+.sharebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; background: var(--surface); border-top: 1px solid var(--line); display: flex; gap: 8px; align-items: center; padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.sharebar span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--muted); }
+@media (max-width: 370px) { .fields { grid-template-columns: 1fr; } .step .lbl { font-size: 13.5px; } .step .cnt { font-size: 10px; } .summary b { font-size: 16px; } }
+@media (prefers-reduced-motion: no-preference) { .sheet { animation: up .22s ease-out; } @keyframes up { from { transform: translateY(24px); opacity: .6; } } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast" hidden></div>
+<div class="sharebar" id="sharebar" hidden><span></span><button class="btn primary" type="button" id="shareGo">Partager le fichier</button><button class="btn" type="button" id="shareX" aria-label="Fermer">✕</button></div>
+<input type="file" id="fileInput" accept=".xlsx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+
+<script src="lib/exceljs.min.js"></script>
+<script src="lib/jspdf.umd.min.js"></script>
+<script src="lib/jspdf.plugin.autotable.min.js"></script>
+<script src="lib/pdf.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  /* ================= référentiel ================= */
+  const EXTRA_TAG = "Ajout dernière minute";
+  const SUIVI = "Suivi événement";
+  const SHEET_LABEL = { UST: "Ustensiles", SPT: "Sport", EMB: "Emballage", NET: "Nettoyage", It: "IT / audio / vidéo", AUTRE: "Mobilier et courses" };
+  const SHEET_ORDER = ["UST", "SPT", "EMB", "NET", "It", "AUTRE"];
+  const COLS = { name: 1, voulu: 2, dispo: 3, prep: 4, out: 5, in: 6, rem: 7 };
+  const col = (sheet, k) => COLS[k] + (String(sheet).trim() === "It" ? 1 : 0);
+  // 3 types : à rendre (matériel), consommable (ne revient pas), hors stock (courses).
+  const KIND = { durable: { label: "À rendre", cls: "neutral" }, conso: { label: "Consommable", cls: "info" }, hors: { label: "Hors stock", cls: "warn" } };
+  const KIND_NEXT = { durable: "conso", conso: "hors", hors: "durable" };
+  function classify(sheet, name) {
+    const n = norm(name);
+    if (sheet === "EMB") return "conso";
+    if (sheet === "NET") return /balai|ramassette|seau|raclette|aspirateur|brosse|serpill|materiel general/.test(n) ? "durable" : "conso";
+    if (sheet === "AUTRE") return /table|chaise|tapis|tente|banc|grille|panneau|pupitre|rideau|tonnelle/.test(n) ? "durable" : "hors";
+    if (/combustible|allume.?feu|liquide allume|\bpiles?\b|baudruche|craie|gel de chafing/.test(n)) return "conso";
+    return "durable";
+  }
+  const STEPS = [
+    { k: "demande", n: 1, title: "Demande", help: "Ce que tu demandes au stock. Touche le type d'un article pour le changer : à rendre, consommable ou hors stock (courses)." },
+    { k: "reponse", n: 2, title: "Réponse", help: "Importe la réponse du stock (PDF ou Excel). Tu vois tout de suite ce qui manque ou reste à confirmer." },
+    { k: "retrait", n: 3, title: "Retrait", help: "Au stock : coche ce que tu prends. La quantité préparée se met toute seule, ajuste-la si besoin." },
+    { k: "precheck", n: 4, title: "Pré-check", help: "Sur le lieu, avant de ranger, tout seul : compte ce que tu as. Un manque s'affiche tout de suite, cherche-le avant de partir. Pour les consommables, note seulement le reste à rendre." },
+    { k: "retour", n: 5, title: "Retour", help: "Au stock, avec le responsable : coche ce qui est rendu. La quantité de ton pré-check est proposée, il suffit de confirmer." },
+  ];
+  const ICON = {
+    back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
+    files: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2"/></svg>',
+    check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    sheet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h8l5 5v15H6z"/><path d="M14 2v5h5M9 12h7M9 16h7"/></svg>',
+  };
+
+  /* ================= état ================= */
+  let events = [];
+  let view = { name: "home" };
+  const ui = { filter: "", query: "", sheet: null, draftFile: null, confirmDelete: false, addQuery: "", addSel: null };
+  let memoryOnly = false;
+  let pendingImport = null;
+
+  /* ================= utilitaires ================= */
+  const $ = (s, r = document) => r.querySelector(s);
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const isNum = (v) => typeof v === "number" || (typeof v === "string" && /^\s*-?\d+(?:[.,]\d+)?\s*$/.test(v));
+  const toNum = (v) => (typeof v === "number" ? v : parseFloat(String(v).replace(",", ".")));
+  const blank = (v) => v === null || v === undefined || String(v).trim() === "";
+  const fmt = (v) => (blank(v) ? "–" : isNum(v) ? String(+toNum(v).toFixed(2)) : String(v).trim());
+  function norm(s) { return String(s ?? "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[’']/g, " ").replace(/\s+/g, " ").trim(); }
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const todayISO = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+  function fmtDate(iso, long) {
+    if (!iso) return ""; const d = new Date(iso + "T12:00:00"); if (isNaN(d)) return iso;
+    return d.toLocaleDateString("fr-BE", long ? { weekday: "long", day: "numeric", month: "long" } : { weekday: "short", day: "2-digit", month: "2-digit" });
+  }
+  function cellVal(c) {
+    let v = c && c.value;
+    if (v && typeof v === "object") {
+      if (Array.isArray(v.richText)) v = v.richText.map((r) => r.text).join("");
+      else if (v instanceof Date) v = v.toLocaleDateString("fr-BE");
+      else if ("result" in v) v = v.result;
+      else if ("text" in v) v = v.text;
+      else v = "";
+    }
+    return v === undefined ? null : v;
+  }
+  const isTbc = (v) => /^\s*(tbc|à confirmer|a confirmer|\?)\s*$/i.test(String(v ?? ""));
+  const requested = (v) => !blank(v) && !(isNum(v) && toNum(v) === 0);
+  function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => (t.hidden = true), 3200); }
+  const sortSheets = (a, b) => { const ia = SHEET_ORDER.indexOf(a), ib = SHEET_ORDER.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b); };
+  // Le type choisi pour un article est retenu pour les prochains événements.
+  let kindPrefs = {};
+  try { kindPrefs = JSON.parse(localStorage.getItem("kind-prefs") || "{}") || {}; } catch (e) {}
+  function setKindPref(it) { kindPrefs[it.sheet + "|" + norm(it.name)] = it.kind; try { localStorage.setItem("kind-prefs", JSON.stringify(kindPrefs)); } catch (e) {} }
+  const kindFor = (sheet, name) => kindPrefs[sheet + "|" + norm(name)] || classify(sheet, name);
+
+  /* ================= stockage (IndexedDB, sur le téléphone) ================= */
+  let dbp = null;
+  function idb() {
+    if (!dbp) dbp = new Promise((res, rej) => { const r = indexedDB.open("stock-evenements", 1); r.onupgradeneeded = () => r.result.createObjectStore("events", { keyPath: "id" }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+    return dbp;
+  }
+  async function dbAll() { const db = await idb(); return new Promise((res, rej) => { const q = db.transaction("events").objectStore("events").getAll(); q.onsuccess = () => res(q.result || []); q.onerror = () => rej(q.error); }); }
+  async function dbPut(ev) { if (memoryOnly) return; try { const db = await idb(); await new Promise((res, rej) => { const t = db.transaction("events", "readwrite"); t.objectStore("events").put(ev); t.oncomplete = res; t.onerror = () => rej(t.error); }); } catch (e) { memoryOnly = true; toast("Le téléphone refuse l'enregistrement : exporte l'Excel pour ne rien perdre."); } }
+  async function dbDel(id) { if (memoryOnly) return; try { const db = await idb(); await new Promise((res) => { const t = db.transaction("events", "readwrite"); t.objectStore("events").delete(id); t.oncomplete = res; t.onerror = res; }); } catch (e) {} }
+  let saveTimer = null;
+  function persist(ev, now) { ev.updated = Date.now(); clearTimeout(saveTimer); if (now) dbPut(ev); else saveTimer = setTimeout(() => dbPut(ev), 250); }
+
+  /* ================= modèle ================= */
+  // item : { id, sheet, row, name, kind, voulu, dispo, answered, out, in, rem, extra, inReq }
+  const isStock = (it) => it.kind !== "hors";
+  const inReq = (it) => it.inReq;
+  const onlyExtra = (it) => it.extra && !requested(it.voulu);
+  const taken = (it) => isStock(it) && !blank(it.out);
+  const cmp = (a, b) => (isNum(a) && isNum(b) ? toNum(a) - toNum(b) : String(a).trim() === String(b ?? "").trim() ? 0 : NaN);
+  function repState(ev, it) {
+    if (!isStock(it)) return { k: "hors", label: "Courses", cls: "warn" };
+    if (onlyExtra(it)) return { k: "ok", label: "Ajout", cls: "info" };
+    if (isTbc(it.dispo)) return { k: "tbc", label: "À confirmer", cls: "warn" };
+    if (blank(it.dispo)) return it.answered ? { k: "none", label: "Pas de réponse", cls: "warn" } : (ev.replySheets || []).includes(it.sheet) ? { k: "none", label: "Absent de la réponse", cls: "warn" } : { k: "wait", label: "En attente", cls: "neutral" };
+    if (!isNum(it.dispo)) return { k: "ok", label: fmt(it.dispo), cls: "good" };
+    const d = toNum(it.dispo);
+    if (d <= 0) return { k: "zero", label: "Indisponible", cls: "bad" };
+    if (isNum(it.voulu) && d < toNum(it.voulu)) return { k: "part", label: "Manque " + fmt(toNum(it.voulu) - d), cls: "bad" };
+    return { k: "ok", label: "Dispo", cls: "good" };
+  }
+  const expected = (it) => (isNum(it.dispo) && toNum(it.dispo) > 0 ? it.dispo : blank(it.voulu) ? 1 : it.voulu);
+  function outState(it) {
+    if (!taken(it)) return { k: "todo", label: "", cls: "" };
+    if (onlyExtra(it)) return { k: "done", label: "Ajout", cls: "info" };
+    const d = cmp(it.out, expected(it));
+    if (d === 0) return { k: "done", label: "", cls: "" };
+    if (isNaN(d)) return { k: "diff", label: "À vérifier", cls: "warn" };
+    return { k: "diff", label: (d > 0 ? "+" : "−") + fmt(Math.abs(d)) + " vs prévu", cls: "warn" };
+  }
+  function preState(it) {
+    if (it.kind === "conso") return blank(it.pre) || (isNum(it.pre) && toNum(it.pre) === 0) ? { k: "done", label: "Consommé", cls: "info" } : { k: "done", label: "Reste " + fmt(it.pre), cls: "info" };
+    if (blank(it.pre)) return { k: "todo", label: "", cls: "" };
+    const d = cmp(it.pre, it.out);
+    if (d >= 0) return { k: "done", label: d > 0 ? "+" + fmt(d) : "", cls: d > 0 ? "warn" : "" };
+    if (isNaN(d)) return { k: "diff", label: "À vérifier", cls: "bad" };
+    return { k: "diff", label: "Manque " + fmt(-d), cls: "bad" };
+  }
+  const backRef = (it) => (!blank(it.pre) ? it.pre : it.out);
+  // Consommable : le reste compté au pré-check vaut reste rendu tant que le retour ne dit pas autre chose.
+  const consoIn = (it) => (blank(it.in) ? it.pre : it.in);
+  function backState(it) {
+    if (it.kind === "conso") { const v = consoIn(it); return blank(v) || (isNum(v) && toNum(v) === 0) ? { k: "done", label: "Consommé", cls: "info" } : { k: "done", label: "Reste rendu " + fmt(v), cls: "info" }; }
+    if (blank(it.in)) return { k: "todo", label: "", cls: "" };
+    const d = cmp(it.in, it.out);
+    if (d >= 0) return { k: "done", label: d > 0 ? "+" + fmt(d) : "", cls: d > 0 ? "warn" : "" };
+    if (isNaN(d)) return { k: "diff", label: "À vérifier", cls: "bad" };
+    return { k: "diff", label: "Manque " + fmt(-d), cls: "bad" };
+  }
+  function stepItems(ev, step) {
+    if (step === "demande") return ev.items.filter(inReq);
+    if (step === "reponse") return ev.items.filter((i) => inReq(i) && isStock(i) && !onlyExtra(i));
+    if (step === "retrait") return ev.items.filter((i) => isStock(i) && (inReq(i) || taken(i)));
+    return ev.items.filter(taken);
+  }
+  function itemStatus(ev, step, it) {
+    if (step === "demande") return { k: "done" };
+    if (step === "reponse") { const r = repState(ev, it); return { k: r.k === "ok" ? "done" : r.k === "wait" ? "todo" : "diff" }; }
+    if (step === "retrait") { if (!taken(it) && repState(ev, it).k === "zero") return { k: "skip" }; return outState(it); }
+    if (step === "precheck") return preState(it);
+    return backState(it);
+  }
+  function stepCount(ev, step) {
+    let its = stepItems(ev, step);
+    if (step === "retour" || step === "precheck") its = its.filter((i) => i.kind === "durable");
+    if (step === "retrait") its = its.filter((i) => !onlyExtra(i) && itemStatus(ev, step, i).k !== "skip");
+    const st = its.map((i) => itemStatus(ev, step, i).k);
+    const issues = stepItems(ev, step).filter((i) => itemStatus(ev, step, i).k === "diff").length;
+    return { total: its.length, done: st.filter((k) => k === "done" || k === "diff").length, issues };
+  }
+  function currentStep(ev) {
+    if (ev.items.some((i) => i.kind === "durable" && taken(i) && !blank(i.in))) return "retour";
+    if (ev.items.some((i) => i.kind === "durable" && taken(i) && !blank(i.pre))) { const c = stepCount(ev, "precheck"); return c.done >= c.total ? "retour" : "precheck"; }
+    if (ev.items.some(taken)) { const c = stepCount(ev, "retrait"); return c.done >= c.total ? "precheck" : "retrait"; }
+    if (ev.replied) return "reponse";
+    return ev.items.some(inReq) ? "reponse" : "demande";
+  }
+
+  /* ================= lecture Excel (template USNE) ================= */
+  function parseWorkbook(wb) {
+    const items = []; let commande = ""; let suivi = null;
+    wb.eachSheet((ws) => {
+      const sheet = ws.name.trim();
+      if (sheet === SUIVI) { suivi = ws; return; }
+      let start = 3;
+      for (let r = 1; r <= Math.min(10, ws.rowCount); r++) {
+        const row = ws.getRow(r);
+        for (let c = 1; c <= 4; c++) {
+          const m = String(cellVal(row.getCell(c)) ?? "").match(/n°\s*commande\s*:?\s*(.*)$/i);
+          if (m && !commande) { const nx = String(cellVal(row.getCell(c + 1)) ?? ""); commande = (m[1] || (/commande/i.test(nx) ? "" : nx)).trim(); }
+        }
+        if (/quantit/i.test(String(cellVal(row.getCell(col(sheet, "voulu"))) ?? ""))) start = r + 1;
+      }
+      for (let r = start; r <= ws.rowCount; r++) {
+        const row = ws.getRow(r);
+        const name = String(cellVal(row.getCell(col(sheet, "name"))) ?? "").replace(/\s+/g, " ").trim();
+        if (!name || /^n°\s*commande/i.test(name) || /^mat[ée]riel\s*$/i.test(name)) continue;
+        const g = (k) => cellVal(row.getCell(col(sheet, k)));
+        const inn = g("in"), out = g("out"), voulu = g("voulu"), dispo = g("dispo");
+        const rem = String(g("rem") ?? "").trim();
+        const extra = rem.includes(EXTRA_TAG);
+        items.push({
+          id: uid(), sheet, row: r, name, kind: kindFor(sheet, name),
+          voulu: blank(voulu) ? null : voulu, dispo: blank(dispo) ? "" : dispo, answered: !blank(dispo),
+          out: blank(out) ? "" : out, in: blank(inn) || /^consomm/i.test(String(inn)) ? "" : inn,
+          rem: extra ? rem.replace(EXTRA_TAG, "").replace(/^[\s–-]+/, "") : rem, extra, pre: "",
+          inReq: requested(voulu) || extra || !blank(out),
+        });
+      }
+    });
+    if (suivi) {
+      const K = { "a rendre": "durable", consommable: "conso", "hors stock": "hors" };
+      const H = {}; suivi.getRow(1).eachCell((c, i) => (H[norm(cellVal(c))] = i));
+      suivi.eachRow((row, n) => {
+        if (n === 1) return;
+        const cands = items.filter((i) => i.sheet === String(cellVal(row.getCell(1)) ?? "") && norm(i.name) === norm(cellVal(row.getCell(2))) && !i._suivi);
+        const it = cands.find((i) => !blank(i.out)) || cands.find((i) => i.inReq) || cands[0];
+        if (!it) return; it._suivi = true;
+        const k = K[norm(cellVal(row.getCell(H["type"] || 3)))]; if (k) it.kind = k;
+        if (H["pre-check"]) { const v = cellVal(row.getCell(H["pre-check"])); if (!blank(v)) it.pre = /^consomm/i.test(String(v)) ? "" : v; }
+      });
+    }
+    items.forEach((i) => delete i._suivi);
+    return { items, commande };
+  }
+
+  /* ================= lecture PDF (réponse du stock) ================= */
+  async function parsePdf(buf) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "lib/pdf.worker.min.js";
+    const doc = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+    const rows = []; let cols = null, sheet = null, commande = "";
+    for (let p = 1; p <= doc.numPages; p++) {
+      const page = await doc.getPage(p);
+      const tc = await page.getTextContent();
+      const its = tc.items.filter((s) => s.str && s.str.trim()).map((s) => ({ x: s.transform[4], y: s.transform[5], w: s.width, t: s.str }));
+      its.sort((a, b) => b.y - a.y || a.x - b.x);
+      const lines = [];
+      for (const it of its) { const L = lines.find((l) => Math.abs(l.y - it.y) < 3); if (L) L.items.push(it); else lines.push({ y: it.y, items: [it] }); }
+      for (const L of lines) {
+        L.items.sort((a, b) => a.x - b.x);
+        const text = L.items.map((i) => i.t).join(" ").replace(/\s+/g, " ").trim();
+        const mc = text.match(/^(.*?)\s*N°\s*Commande\s*:?\s*(.*)$/i);
+        if (mc) { sheet = (mc[1] || "").trim().split(" ")[0] || sheet; if (mc[2] && mc[2].trim()) commande = mc[2].trim(); continue; }
+        if (/mat[ée]riel/i.test(text) && /quantit/i.test(text)) {
+          const pos = (re) => { for (const i of L.items) { const k = i.t.search(re); if (k >= 0) return i.x + (i.w * k) / Math.max(1, i.t.length); } return null; };
+          cols = { qty: pos(/quantit/i), dispo: pos(/dispon/i), prep: pos(/pr[ée]par/i), out: pos(/check\s*t?\s*out|checkt/i), inn: pos(/check\s*in/i), rem: pos(/remarq/i) };
+          if (cols.qty == null || cols.dispo == null) cols = null;
+          continue;
+        }
+        if (!cols || !sheet) continue;
+        const b = [cols.qty, cols.dispo, cols.prep ?? cols.dispo + 40, cols.out ?? cols.dispo + 80, cols.inn ?? cols.dispo + 120, cols.rem ?? cols.dispo + 160];
+        const cell = ["", "", "", "", "", "", ""];
+        for (const i of L.items) { const cx = i.x + i.w / 2; let k = 0; while (k < b.length && cx >= b[k]) k++; cell[k] = (cell[k] + " " + i.t).trim(); }
+        const name = cell[0], qty = cell[1], dispo = cell[2], rem = cell[6];
+        if (!name || /^\d+$/.test(name)) continue;
+        if (blank(qty) && blank(dispo)) continue;
+        rows.push({ sheet, name: name.replace(/\s+/g, " ").trim(), qty: isNum(qty) ? toNum(qty) : qty, dispo: isNum(dispo) ? toNum(dispo) : dispo, rem });
+      }
+    }
+    return { rows, commande };
+  }
+
+  /* ================= import / fusion ================= */
+  function findItem(ev, sheet, name, used) {
+    const n = norm(name);
+    const ok = (i) => norm(i.name) === n && !(used && used.has(i.id));
+    const same = ev.items.filter((i) => i.sheet === sheet && ok(i));
+    // Un même nom peut exister deux fois dans le template (ex. « Plateaux ») : on prend d'abord la ligne demandée.
+    return same.find(inReq) || same[0] || ev.items.find((i) => ok(i) && inReq(i)) || ev.items.find(ok);
+  }
+  function mergeReply(ev, rows, commande) {
+    const sheets = new Set(); const used = new Set(); let changed = 0;
+    for (const r of rows) {
+      sheets.add(r.sheet);
+      let it = findItem(ev, r.sheet, r.name, used);
+      if (!it) { it = { id: uid(), sheet: r.sheet, row: null, name: r.name, kind: kindFor(r.sheet, r.name), voulu: null, dispo: "", answered: false, out: "", pre: "", in: "", rem: r.rem || "", extra: false, inReq: true }; ev.items.push(it); }
+      if (!blank(r.qty) && cmp(r.qty, it.voulu) !== 0) { if (requested(it.voulu)) it.prevVoulu = it.voulu; it.voulu = r.qty; changed++; }
+      it.inReq = it.inReq || requested(r.qty);
+      it.dispo = blank(r.dispo) ? "" : r.dispo; it.answered = true; used.add(it.id);
+      if (r.rem && !it.rem) it.rem = r.rem;
+    }
+    ev.replied = true; ev.replySheets = [...new Set([...(ev.replySheets || []), ...sheets])];
+    if (commande) ev.commande = commande;
+    return { n: rows.length, changed, sheets: [...sheets] };
+  }
+  function mergeWorkbookInto(ev, parsed) {
+    let n = 0; const used = new Set();
+    for (const p of parsed.items) {
+      const it = (p.row && ev.items.find((i) => i.sheet === p.sheet && i.row === p.row && norm(i.name) === norm(p.name))) || findItem(ev, p.sheet, p.name, used);
+      if (it) used.add(it.id);
+      if (!it) { ev.items.push(p); if (p.inReq) n++; continue; }
+      let touched = false;
+      for (const k of ["voulu", "dispo", "out", "pre", "in"]) if (!blank(p[k]) && cmp(p[k], it[k]) !== 0) { it[k] = p[k]; touched = true; }
+      if (!blank(p.dispo)) it.answered = true;
+      if (p.extra) it.extra = true;
+      if (!it.row && p.row) it.row = p.row;
+      it.kind = p.kind; it.inReq = it.inReq || p.inReq;
+      if (touched) n++;
+    }
+    const rep = parsed.items.filter((i) => !blank(i.dispo));
+    if (rep.length) { ev.replied = true; ev.replySheets = [...new Set([...(ev.replySheets || []), ...rep.map((i) => i.sheet)])]; }
+    if (parsed.commande && !ev.commande) ev.commande = parsed.commande;
+    return n;
+  }
+  async function readFile(file) {
+    const buf = await file.arrayBuffer();
+    if (/\.pdf$/i.test(file.name) || file.type === "application/pdf") return { type: "pdf", buf, ...(await parsePdf(buf)) };
+    const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf.slice(0));
+    return { type: "xlsx", buf, ...parseWorkbook(wb) };
+  }
+  async function importIntoEvent(ev, file) {
+    try {
+      const f = await readFile(file);
+      if (f.type === "pdf") {
+        if (!f.rows.length) { toast("Je ne trouve pas de tableau USNE dans ce PDF."); return; }
+        const r = mergeReply(ev, f.rows, f.commande);
+        persist(ev, true); view.step = "reponse"; ui.filter = ""; render(); window.scrollTo(0, 0);
+        toast(`Réponse du stock lue : ${r.n} lignes (${r.sheets.join(", ")})${r.changed ? `, ${r.changed} quantité${r.changed > 1 ? "s" : ""} mise${r.changed > 1 ? "s" : ""} à jour` : ""}.`);
+      } else {
+        if (!ev.buf) { ev.buf = f.buf; ev.fileName = file.name; }
+        const n = mergeWorkbookInto(ev, f);
+        persist(ev, true); view.step = currentStep(ev); ui.filter = ""; render(); window.scrollTo(0, 0);
+        toast(`Excel importé : ${n} article${n > 1 ? "s" : ""} mis à jour.`);
+      }
+    } catch (e) { console.error(e); toast("Impossible de lire ce fichier (Excel .xlsx ou PDF attendu)."); }
+  }
+  async function createEvent(name, date, file) {
+    const ev = { id: uid(), name, date, created: Date.now(), updated: Date.now(), fileName: "", commande: "", items: [], buf: null, replied: false, replySheets: [] };
+    if (file) {
+      const f = await readFile(file);
+      if (f.type === "pdf") { if (!f.rows.length) throw new Error("vide"); mergeReply(ev, f.rows, f.commande); ev.fileName = file.name; }
+      else {
+        if (!f.items.length) throw new Error("vide");
+        ev.items = f.items; ev.commande = f.commande; ev.fileName = file.name; ev.buf = f.buf;
+        const rep = f.items.filter((i) => !blank(i.dispo));
+        if (rep.length) { ev.replied = true; ev.replySheets = [...new Set(rep.map((i) => i.sheet))]; }
+      }
+    }
+    events.unshift(ev); persist(ev, true); return ev;
+  }
+
+  /* ================= export ================= */
+  const cellOut = (v) => (blank(v) ? null : isNum(v) ? toNum(v) : String(v));
+  function finalState(ev, it) {
+    if (!isStock(it)) return "Hors stock";
+    if (taken(it)) {
+      if (it.kind === "conso") return backState(it).label;
+      if (!blank(it.in)) return backState(it).label || "Rendu";
+      if (!blank(it.pre)) return preState(it).label ? "Pré-check : " + preState(it).label.toLowerCase() : "Pré-check OK";
+      return "Sorti";
+    }
+    const r = repState(ev, it);
+    return r.k === "ok" ? "Pas pris" : r.label;
+  }
+  function blankWorkbook(ev) {
+    const wb = new ExcelJS.Workbook(); const rows = {};
+    const sheets = [...new Set(ev.items.filter((i) => inReq(i) || taken(i)).map((i) => i.sheet))].sort(sortSheets);
+    if (!sheets.length) sheets.push("UST");
+    for (const s of sheets) {
+      const ws = wb.addWorksheet(s); const off = s === "It" ? 1 : 0;
+      ws.getRow(1).values = off ? [null, null, "N°Commande : " + (ev.commande || ev.name)] : [null, "N°Commande : " + (ev.commande || ev.name)];
+      ws.getRow(1).font = { bold: true, size: 14 };
+      const head = [null]; if (off) head[1] = "Type";
+      ["Matériel", "Quantité", "Disponible", "préparé", "check out", "check in", "remarques"].forEach((h, i) => (head[i + 1 + off] = h));
+      ws.getRow(2).values = head; ws.getRow(2).font = { bold: true };
+      let r = 3;
+      for (const it of ev.items.filter((i) => i.sheet === s && (inReq(i) || taken(i)))) { ws.getCell(r, col(s, "name")).value = it.name; rows[it.id] = r++; }
+      ws.getColumn(1 + off).width = 34;
+    }
+    return { wb, rows };
+  }
+  async function buildExport(ev) {
+    let wb, rows = {};
+    if (ev.buf) { wb = new ExcelJS.Workbook(); await wb.xlsx.load(ev.buf.slice(0)); ev.items.forEach((i) => { if (i.row) rows[i.id] = i.row; }); }
+    else ({ wb, rows } = blankWorkbook(ev));
+    const old = wb.getWorksheet(SUIVI); if (old) wb.removeWorksheet(old.id);
+    // N° de commande (souvent reçu avec la réponse du stock) recopié dans l'en-tête de chaque onglet.
+    if (ev.commande) wb.eachSheet((ws) => { for (let r = 1; r <= Math.min(3, ws.rowCount); r++) for (let c = 1; c <= 3; c++) { const cell = ws.getCell(r, c); const v = String(cellVal(cell) ?? ""); if (/^n°\s*commande\s*:?\s*$/i.test(v.trim())) cell.value = "N°Commande : " + ev.commande; } });
+    const write = (ws, r, it) => {
+      const set = (k, v) => (ws.getCell(r, col(it.sheet, k)).value = v);
+      set("voulu", cellOut(requested(it.voulu) ? it.voulu : it.extra ? it.out : it.voulu));
+      set("dispo", cellOut(it.dispo));
+      set("out", cellOut(it.out));
+      set("in", taken(it) && it.kind === "conso" ? (blank(consoIn(it)) || toNum(consoIn(it)) === 0 ? "consommé" : cellOut(consoIn(it))) : cellOut(it.in));
+      if (it.extra) set("rem", EXTRA_TAG + (it.rem ? " – " + it.rem : ""));
+      else if (it.rem && blank(cellVal(ws.getCell(r, col(it.sheet, "rem"))))) set("rem", it.rem);
+    };
+    for (const it of ev.items) { const r = rows[it.id]; if (!r) continue; const ws = wb.getWorksheet(it.sheet); if (ws) write(ws, r, it); }
+    for (const it of ev.items.filter((i) => !rows[i.id] && (inReq(i) || taken(i)))) {
+      const ws = wb.getWorksheet(it.sheet) || wb.addWorksheet(it.sheet);
+      let last = 0; ws.eachRow((row, n) => { if (!blank(cellVal(row.getCell(col(it.sheet, "name"))))) last = n; });
+      const vals = []; vals[col(it.sheet, "name")] = it.name;
+      let r;
+      if (last >= 2) { ws.insertRow(last + 1, vals, "i"); r = last + 1; } else { ws.addRow(vals); r = ws.rowCount; }
+      write(ws, r, it);
+    }
+    const su = wb.addWorksheet(SUIVI);
+    su.columns = [{ header: "Onglet", width: 9 }, { header: "Article", width: 34 }, { header: "Type", width: 13 }, { header: "Demandé", width: 10 }, { header: "Dispo stock", width: 12 }, { header: "Pris (check out)", width: 15 }, { header: "Pré-check", width: 11 }, { header: "Rendu (check in)", width: 15 }, { header: "État", width: 16 }, { header: "Remarque", width: 26 }];
+    su.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+    su.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF18222E" } };
+    for (const it of ev.items.filter((i) => inReq(i) || taken(i)).sort((a, b) => sortSheets(a.sheet, b.sheet))) {
+      const st = finalState(ev, it);
+      const rem = [it.extra ? EXTRA_TAG : "", it.rem || ""].filter(Boolean).join(" – ");
+      const r = su.addRow([it.sheet, it.name, KIND[it.kind].label, cellOut(it.voulu), cellOut(it.dispo), cellOut(it.out), cellOut(it.pre), it.kind === "conso" && taken(it) ? (blank(consoIn(it)) || toNum(consoIn(it)) === 0 ? "consommé" : cellOut(consoIn(it))) : cellOut(it.in), st, rem || null]);
+      if (/Manque|manque|Indisponible|confirmer|Pas de réponse|rifier/.test(st)) r.getCell(9).font = { bold: true, color: { argb: "FFB3261E" } };
+    }
+    su.views = [{ state: "frozen", ySplit: 1 }];
+    return wb.xlsx.writeBuffer();
+  }
+  const safeName = (s) => String(s || "evenement").normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^\w-]+/g, "_").replace(/^_+|_+$/g, "");
+  const MIME = { xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", pdf: "application/pdf" };
+  async function offer(filename, data) {
+    const ext = filename.split(".").pop(); const blob = new Blob([data], { type: MIME[ext] });
+    const mobile = /Android|iPhone|iPad/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+    try {
+      const file = new File([blob], filename, { type: MIME[ext] });
+      if (mobile && navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: filename }); toast("Fichier prêt : " + filename); return; }
+    } catch (e) {
+      if (e && e.name === "AbortError") return;
+      if (e && e.name === "NotAllowedError") { showShareBar(new File([blob], filename, { type: MIME[ext] })); return; }
+    }
+    const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000);
+    toast("Fichier téléchargé : " + filename);
+  }
+  function showShareBar(file) {
+    const bar = $("#sharebar"); bar.querySelector("span").textContent = file.name; bar.hidden = false;
+    $("#shareGo").onclick = async () => { try { await navigator.share({ files: [file], title: file.name }); bar.hidden = true; } catch (e) { if (e && e.name !== "AbortError") toast("Le partage n'a pas marché. Réessaie."); } };
+    $("#shareX").onclick = () => (bar.hidden = true);
+  }
+  const DOC = { demande: "Demande", reponse: "Manques", retrait: "Bon_de_sortie", precheck: "Pre-check", retour: "Bon_de_retour" };
+  const fname = (ev, step, ext) => DOC[step] + "_" + safeName(ev.name) + "_" + (ev.date || todayISO()) + "." + ext;
+  async function exportXlsx(ev, step) { try { await offer(fname(ev, step, "xlsx"), await buildExport(ev)); } catch (e) { console.error(e); toast("L'Excel n'a pas pu être généré."); } }
+  const pdfTxt = (s) => String(s ?? "").replace(/œ/g, "oe").replace(/Œ/g, "OE").replace(/[−–—]/g, "-").replace(/’/g, "'").replace(/[^\x00-\xFF]/g, "");
+  function exportPdf(ev, step) {
+    try {
+      const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: "pt", format: "a4" });
+      const TITLE = { demande: "Demande de matériel", reponse: "Réponse du stock - points à régler", retrait: "Bon de sortie du stock", precheck: "Pré-check fin d'événement", retour: "Bon de retour au stock" };
+      doc.setFont("helvetica", "bold"); doc.setFontSize(17); doc.text(pdfTxt(TITLE[step]), 40, 50);
+      doc.setFontSize(12); doc.text(pdfTxt(ev.name + (ev.commande ? "  ·  N° " + ev.commande : "")), 40, 70);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(110);
+      const d = new Date(); doc.text(pdfTxt(`Événement : ${fmtDate(ev.date, true)}  ·  Édité le ${d.toLocaleDateString("fr-BE")} à ${d.toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" })}`), 40, 86); doc.setTextColor(0);
+      let head, rowsOf, pick;
+      if (step === "demande") { pick = (i) => inReq(i) && isStock(i); head = ["Matériel", "Quantité", "Type"]; rowsOf = (i) => [i.name, fmt(i.voulu), KIND[i.kind].label]; }
+      else if (step === "reponse") { const set = new Set(stepItems(ev, "reponse")); pick = (i) => set.has(i) && repState(ev, i).k !== "ok"; head = ["Matériel", "Demandé", "Dispo", "État"]; rowsOf = (i) => [i.name, fmt(i.voulu), fmt(i.dispo), repState(ev, i).label]; }
+      else if (step === "retrait") { pick = taken; head = ["Matériel", "Demandé", "Pris", "Type"]; rowsOf = (i) => [i.name + (i.extra ? " (ajout)" : ""), fmt(i.voulu), fmt(i.out), KIND[i.kind].label]; }
+      else if (step === "precheck") { pick = taken; head = ["Matériel", "Sorti", "Compté", "État"]; rowsOf = (i) => [i.name + (i.extra ? " (ajout)" : ""), fmt(i.out), i.kind === "conso" && blank(i.pre) ? "-" : fmt(i.pre), i.kind === "durable" && blank(i.pre) ? "Pas compté" : preState(i).label || "OK"]; }
+      else { pick = taken; head = ["Matériel", "Sorti", "Pré-check", "Rendu", "État"]; rowsOf = (i) => [i.name + (i.extra ? " (ajout)" : ""), fmt(i.out), fmt(i.pre), i.kind === "conso" ? fmt(consoIn(i)) : fmt(i.in), finalState(ev, i)]; }
+      let y = 102; let any = false;
+      for (const sh of [...new Set(ev.items.filter(pick).map((i) => i.sheet))].sort(sortSheets)) {
+        const its = ev.items.filter((i) => i.sheet === sh && pick(i)); any = true;
+        doc.autoTable({ startY: y, margin: { left: 40, right: 40 }, head: [head.map((h, k) => pdfTxt(k ? h : sh + " - " + (SHEET_LABEL[sh] || sh)))], body: its.map((i) => rowsOf(i).map(pdfTxt)),
+          styles: { fontSize: 9.5, cellPadding: 4 }, headStyles: { fillColor: [24, 34, 46] }, columnStyles: { 1: { halign: "right" }, 2: { halign: "right" } },
+          didParseCell: (h) => { if (h.section === "body" && h.column.index === head.length - 1) { const v = String(h.cell.raw); if (/^Manque|Indisponible|confirmer|Pas de r|rifier/i.test(v)) { h.cell.styles.textColor = [179, 38, 30]; h.cell.styles.fontStyle = "bold"; } } } });
+        y = doc.lastAutoTable.finalY + 14;
+      }
+      if (!any) { doc.text(pdfTxt(step === "reponse" ? "Aucun point à régler : tout est disponible." : "Aucun article."), 40, y + 10); y += 30; }
+      if (step === "precheck") {
+        const miss = ev.items.filter((i) => taken(i) && preState(i).cls === "bad");
+        doc.setFont("helvetica", "bold"); doc.text(pdfTxt(miss.length ? `${miss.length} article(s) manquant(s) au pré-check.` : "Pré-check : tout le matériel à rendre est là."), 40, y + 6); doc.setFont("helvetica", "normal"); y += 20;
+      }
+      if (step === "retour") {
+        const miss = ev.items.filter((i) => taken(i) && backState(i).cls === "bad");
+        doc.setFont("helvetica", "bold"); doc.text(pdfTxt(miss.length ? `${miss.length} article(s) manquant(s) au retour.` : "Tout le matériel à rendre est rentré."), 40, y + 6); doc.setFont("helvetica", "normal"); y += 20;
+      }
+      if (step === "retrait" || step === "retour") {
+        if (y > 700) { doc.addPage(); y = 60; }
+        y += 20; doc.setFontSize(10);
+        doc.text(pdfTxt("Responsable stock (nom et signature) :"), 40, y); doc.text(pdfTxt(step === "retrait" ? "Retiré par (nom et signature) :" : "Rendu par (nom et signature) :"), 310, y);
+        doc.setDrawColor(150); doc.line(40, y + 44, 270, y + 44); doc.line(310, y + 44, 555, y + 44);
+      }
+      offer(fname(ev, step, "pdf"), doc.output("arraybuffer"));
+    } catch (e) { console.error(e); toast("Le PDF n'a pas pu être généré."); }
+  }
+  function manquesText(ev) {
+    const lines = [];
+    for (const i of stepItems(ev, "reponse")) {
+      const r = repState(ev, i);
+      if (r.k === "zero") lines.push(`* ${i.name} : ${fmt(i.voulu)} (indisponible)`);
+      else if (r.k === "part") lines.push(`* ${i.name} : ${fmt(toNum(i.voulu) - toNum(i.dispo))} manquant(s) sur ${fmt(i.voulu)}`);
+      else if (r.k === "tbc") lines.push(`* ${i.name} : ${fmt(i.voulu)} (à confirmer)`);
+      else if (r.k === "none") lines.push(`* ${i.name} : ${fmt(i.voulu)} (${i.answered ? "pas de réponse" : "absent de la réponse"})`);
+    }
+    const courses = ev.items.filter((i) => inReq(i) && !isStock(i)).map((i) => `* ${i.name} : ${fmt(i.voulu)}${i.rem ? " " + i.rem : ""}`);
+    let t = `*${ev.name} – ${fmtDate(ev.date)}*\n`;
+    t += lines.length ? `\n*À trouver (manque au stock)*\n${lines.join("\n")}\n` : "\nTout est disponible au stock.\n";
+    if (courses.length) t += `\n*Courses (hors stock)*\n${courses.join("\n")}\n`;
+    return t;
+  }
+  async function copyText(t) {
+    try { await navigator.clipboard.writeText(t); toast("Liste copiée : colle-la dans WhatsApp."); return; } catch (e) {}
+    try { if (navigator.share) { await navigator.share({ text: t }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
+    toast("Copie impossible sur cet appareil.");
+  }
+
+  /* ================= rendu ================= */
+  const app = $("#app");
+  function render() {
+    const a = document.activeElement; const keep = a && a.id; let caret = null; try { caret = a && a.selectionStart; } catch (e) {}
+    app.innerHTML = view.name === "home" ? renderHome() : renderEvent();
+    if (ui.sheet) app.insertAdjacentHTML("beforeend", renderSheet());
+    if (keep) { const el = document.getElementById(keep); if (el) { el.focus({ preventScroll: true }); try { if (caret != null) el.setSelectionRange(caret, caret); } catch (e) {} } }
+  }
+  const getEv = () => events.find((e) => e.id === view.id);
+  const pct = (s, c) => (s === "demande" ? (c.total ? 100 : 0) : c.total ? Math.round((c.done / c.total) * 100) : 0);
+  function miniSteps(ev) {
+    return `<div class="mini-steps">${STEPS.map((s) => { const c = stepCount(ev, s.k); return `<div><span>${s.title}</span><div class="bar"><i style="width:${pct(s.k, c)}%"></i></div></div>`; }).join("")}</div>`;
+  }
+  function renderHome() {
+    const list = [...events].sort((a, b) => (b.date || "").localeCompare(a.date || "") || b.created - a.created);
+    return `<main class="wrap" style="padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))">
+      <header class="home-head"><div class="brand"><span class="tape" aria-hidden="true"></span>Stock USNE</div><h1>Mes événements</h1></header>
+      <button class="btn primary block" type="button" data-act="new" style="min-height:54px;font-size:16px">+ Nouvel événement</button>
+      ${list.length ? `<p class="section-lbl">${list.length} événement${list.length > 1 ? "s" : ""}</p><div class="evlist">${list.map((ev) => { const s = STEPS.find((x) => x.k === currentStep(ev)); return `
+        <button class="evcard" type="button" data-open="${ev.id}">
+          <div class="t"><h2>${esc(ev.name)}</h2><span class="d">${esc(fmtDate(ev.date))}</span></div>
+          <div class="f">${ev.commande ? "N° " + esc(ev.commande) + " · " : ""}${ev.items.filter(inReq).length} articles demandés</div>
+          ${miniSteps(ev)}<span class="next">Continuer : ${s.n}. ${s.title} →</span>
+        </button>`; }).join("")}</div>`
+      : `<p class="section-lbl">Le déroulé, du bureau au retour au stock</p>
+         <div class="flow"><div><i>1</i><b>Demande</b>ton Excel USNE</div><div><i>2</i><b>Réponse</b>le PDF du stock : dispo, tbc</div><div><i>3</i><b>Retrait</b>check au stock + dernière minute</div><div><i>4</i><b>Pré-check</b>seul, sur le lieu, avant de ranger</div><div><i>5</i><b>Retour</b>check avec le responsable du stock</div></div>`}
+      ${memoryOnly ? `<div class="box info">L'enregistrement sur le téléphone est bloqué (navigation privée ?). Exporte l'Excel pour garder ton travail.</div>` : ""}
+    </main>`;
+  }
+  function stepper(id, field, value, sm) {
+    return `<div class="stepper${sm ? " sm" : ""}"><button type="button" data-step="-1" data-id="${id}" data-field="${field}" aria-label="Moins">−</button><input id="q-${field}-${id}" data-id="${id}" data-field="${field}" inputmode="decimal" value="${esc(blank(value) ? "" : value)}" aria-label="Quantité"><button type="button" data-step="1" data-id="${id}" data-field="${field}" aria-label="Plus">+</button></div>`;
+  }
+  const chip = (s) => (s && s.label ? `<span class="chip ${s.cls}">${esc(s.label)}</span>` : "");
+  const kindChip = (it) => `<button type="button" class="chip ${KIND[it.kind].cls}" data-kind="${it.id}" aria-label="Type : ${KIND[it.kind].label}, toucher pour changer">${KIND[it.kind].label}</button>`;
+  function itemRow(ev, it, step) {
+    const rem = it.rem ? `<span>${esc(it.rem)}</span>` : "";
+    if (step === "demande") return `<div class="item nt"><div><div class="name">${esc(it.name)}</div><div class="meta">${kindChip(it)}${it.extra ? chip({ label: "Ajout", cls: "info" }) : ""}${rem}</div></div>${stepper(it.id, "voulu", it.voulu)}</div>`;
+    if (step === "reponse") {
+      const r = repState(ev, it);
+      const cls = r.cls === "bad" ? " alert" : r.k === "ok" ? " done" : r.cls === "warn" ? " warnbg" : "";
+      return `<div class="item nt${cls}"><div><div class="name">${esc(it.name)}</div><div class="meta"><span>Demandé <span class="q">${esc(fmt(it.voulu))}</span></span>${it.prevVoulu != null ? `<span>(avant ${esc(fmt(it.prevVoulu))})</span>` : ""}${chip(r)}${it.kind === "conso" ? chip({ label: "Consommable", cls: "info" }) : ""}</div></div>
+        <div class="side"><span class="meta" style="margin:0">Dispo</span>${stepper(it.id, "dispo", it.dispo, true)}</div></div>`;
+    }
+    if (step === "retrait") {
+      const on = taken(it), s = outState(it), r = repState(ev, it), zero = !on && r.k === "zero";
+      return `<div class="item${on ? " done" : ""}${zero ? " off" : ""}"><button type="button" class="tick" role="checkbox" aria-checked="${on}" data-tick="${it.id}" aria-label="Pris : ${esc(it.name)}">${ICON.check}</button>
+        <div><div class="name">${esc(it.name)}</div><div class="meta">${onlyExtra(it) ? "" : `<span>Prévu <span class="q">${esc(fmt(expected(it)))}</span></span>`}${r.k !== "ok" && !onlyExtra(it) ? chip(r) : ""}${chip(s)}${it.kind === "conso" ? chip({ label: "Consommable", cls: "info" }) : ""}${rem}</div></div>
+        <div class="side">${stepper(it.id, "out", it.out)}${onlyExtra(it) ? `<button type="button" class="mini" data-unextra="${it.id}">Retirer</button>` : ""}</div></div>`;
+    }
+    const pre = step === "precheck";
+    const f = pre ? "pre" : "in";
+    const b = pre ? preState(it) : backState(it);
+    const preMeta = !pre && !blank(it.pre) ? `<span>Pré-check <span class="q">${esc(fmt(it.pre))}</span></span>` : "";
+    if (it.kind === "conso") return `<div class="item nt"><div><div class="name">${esc(it.name)}</div><div class="meta"><span>Sorti <span class="q">${esc(fmt(it.out))}</span></span>${preMeta}${chip(b)}</div></div><div class="side"><span class="meta" style="margin:0">${pre ? "Reste à rendre" : "Reste rendu"}</span>${stepper(it.id, f, pre ? it.pre : consoIn(it), true)}</div></div>`;
+    const on = b.k !== "todo" && b.cls !== "bad";
+    return `<div class="item${b.cls === "bad" ? " alert" : on ? " done" : ""}"><button type="button" class="tick" role="checkbox" aria-checked="${on}" data-tick="${it.id}" aria-label="${pre ? "Compté" : "Rendu"} : ${esc(it.name)}">${ICON.check}</button>
+      <div><div class="name">${esc(it.name)}</div><div class="meta"><span>Sorti <span class="q">${esc(fmt(it.out))}</span></span>${preMeta}${chip(b)}</div></div>${stepper(it.id, f, it[f])}</div>`;
+  }
+  function stepSummary(ev, step) {
+    if (step === "reponse") {
+      const its = stepItems(ev, "reponse"); const k = (x) => its.filter((i) => repState(ev, i).k === x).length;
+      const courses = ev.items.filter((i) => inReq(i) && !isStock(i)).length;
+      const pb = k("zero") + k("part") + k("tbc") + k("none");
+      return `<div class="summary"><div class="g"><b>${k("ok")}</b><span>Dispo</span></div><div class="r"><b>${k("zero") + k("part")}</b><span>Manques</span></div><div class="w"><b>${k("tbc") + k("none")}</b><span>À confirmer</span></div><div><b>${k("wait")}</b><span>En attente</span></div></div>
+        ${!ev.replied ? `<div class="box info"><b>Pas encore de réponse du stock.</b>Quand tu reçois leur PDF (ou Excel), importe-le : les quantités disponibles se remplissent toutes seules.<div class="row"><button class="btn dark" type="button" data-act="import">Importer la réponse</button></div></div>` : ""}
+        ${ev.replied && (pb || courses) ? `<div class="box warn"><b>${pb ? pb + " point" + (pb > 1 ? "s" : "") + " à régler avec le stock" : "Tout est disponible au stock"}${courses ? ` · ${courses} article${courses > 1 ? "s" : ""} de courses` : ""}.</b>Copie la liste pour la partager, ou pour préparer les bons de commande.<div class="row"><button class="btn" type="button" data-act="copy">Copier la liste</button></div></div>` : ""}
+        ${k("wait") ? `<p class="intro">${k("wait")} article${k("wait") > 1 ? "s" : ""} « en attente » : leur onglet n'est pas dans la réponse du stock (souvent NET, It ou le mobilier).</p>` : ""}`;
+    }
+    if (step === "precheck") {
+      const its = stepItems(ev, "precheck"); const dur = its.filter((i) => i.kind === "durable");
+      const miss = dur.filter((i) => preState(i).cls === "bad").length; const todo = dur.filter((i) => preState(i).k === "todo").length;
+      return `<div class="summary"><div class="g"><b>${dur.length - todo - miss}</b><span>Comptés</span></div><div class="r"><b>${miss}</b><span>Manques</span></div><div><b>${todo}</b><span>À compter</span></div><div><b>${its.length - dur.length}</b><span>Consom&shy;mables</span></div></div>
+        ${miss ? `<div class="box bad"><b>${miss} article${miss > 1 ? "s" : ""} manquant${miss > 1 ? "s" : ""}.</b>Cherche-les sur place avant de partir. Filtre « Écarts » pour les voir.</div>` : dur.length && !todo ? `<div class="box info"><b>Tout le matériel à rendre est là.</b>Tu peux charger et passer au retour avec le stock.</div>` : ""}`;
+    }
+    if (step === "retour") {
+      const its = stepItems(ev, "retour"); const dur = its.filter((i) => i.kind === "durable");
+      const miss = dur.filter((i) => backState(i).cls === "bad").length; const todo = dur.filter((i) => backState(i).k === "todo").length;
+      const preDone = dur.some((i) => !blank(i.pre));
+      return `<div class="summary"><div class="g"><b>${dur.length - todo - miss}</b><span>Rendus</span></div><div class="r"><b>${miss}</b><span>Manques</span></div><div><b>${todo}</b><span>À vérifier</span></div><div><b>${its.length - dur.length}</b><span>Consom&shy;mables</span></div></div>
+        ${!preDone && dur.length ? `<div class="box info"><b>Pas de pré-check fait.</b>Tu peux quand même contrôler ici, ou faire d'abord le pré-check sur place.<div class="row"><button class="btn" type="button" data-goto="precheck">Aller au pré-check</button></div></div>` : ""}
+        ${miss ? `<div class="box bad"><b>${miss} article${miss > 1 ? "s" : ""} manquant${miss > 1 ? "s" : ""}.</b>Vérifie avec le responsable du stock avant de signer le bon de retour.</div>` : ""}`;
+    }
+    return "";
+  }
+  function renderEvent() {
+    const ev = getEv(); if (!ev) { view = { name: "home" }; return renderHome(); }
+    const step = view.step, S = STEPS.find((s) => s.k === step);
+    const all = stepItems(ev, step);
+    const st = (i) => itemStatus(ev, step, i).k;
+    const isIssue = (i) => (step === "reponse" ? ["zero", "part", "tbc", "none"].includes(repState(ev, i).k) : step === "demande" ? false : st(i) === "diff");
+    const isDone = (i) => (step === "reponse" ? repState(ev, i).k === "ok" : st(i) === "done" || st(i) === "diff");
+    const counts = { todo: all.filter((i) => st(i) === "todo").length, issues: all.filter(isIssue).length, done: all.filter(isDone).length, all: all.length };
+    const FILTERS = step === "demande" ? [] : step === "reponse" ? [["issues", "À régler"], ["done", "Dispo"], ["all", "Tout"]] : [["todo", "À faire"], ["issues", "Écarts"], ["done", "Fait"], ["all", "Tout"]];
+    if (!FILTERS.some(([k]) => k === ui.filter)) ui.filter = step === "reponse" ? (ev.replied && counts.issues ? "issues" : "all") : step === "demande" ? "all" : counts.todo ? "todo" : "all";
+    if (step === "demande") ui.filter = "all";
+    const q = norm(ui.query);
+    const shown = all.filter((i) => !q || norm(i.name + " " + i.rem + " " + i.sheet).includes(q))
+      .filter((i) => ui.filter === "all" || (ui.filter === "todo" && st(i) === "todo") || (ui.filter === "issues" && isIssue(i)) || (ui.filter === "done" && isDone(i)));
+    const keyOf = (i) => ((step === "retour" || step === "precheck") && i.kind === "conso" ? "~conso" : step === "demande" && !isStock(i) ? "~hors" : i.sheet);
+    const keys = [...new Set(shown.map(keyOf))].sort((a, b) => (a[0] === "~" ? 1 : 0) - (b[0] === "~" ? 1 : 0) || sortSheets(a, b));
+    const groups = keys.map((k) => {
+      const its = shown.filter((i) => keyOf(i) === k);
+      const todoIds = (step === "retrait" || ((step === "retour" || step === "precheck") && k !== "~conso")) ? its.filter((i) => st(i) === "todo" && !(step === "retrait" && repState(ev, i).k === "zero")).map((i) => i.id) : [];
+      const label = k === "~conso" ? (step === "precheck" ? "Consommables · reste à rendre ?" : "Consommables · pas de retour") : k === "~hors" ? "Courses · hors stock" : SHEET_LABEL[k] || k;
+      return `<section class="group"><div class="ghead"><span class="code">${k[0] === "~" ? "•" : esc(k)}</span><h2>${esc(label)}</h2><span class="cnt">${its.length}</span>${todoIds.length > 1 ? `<button type="button" class="link" data-all="${todoIds.join(",")}">Tout cocher</button>` : ""}</div><div class="list">${its.map((i) => itemRow(ev, i, step)).join("")}</div></section>`;
+    }).join("");
+    const nothing = ((step === "retour" || step === "precheck") && !ev.items.some(taken)) || (step !== "retour" && step !== "precheck" && !all.length);
+    const emptyMsg = step === "retour" || step === "precheck" ? `<strong>Rien n'est encore sorti du stock.</strong><button class="link" type="button" data-goto="retrait">Aller au retrait</button>`
+      : step === "demande" ? `<strong>Aucun article demandé.</strong>Importe ton Excel USNE, ou ajoute les articles un par un.<button class="btn dark" type="button" data-act="import">Importer l'Excel de demande</button>`
+      : step === "reponse" ? `<strong>Aucun article du stock dans la demande.</strong>` : `<strong>Aucun article à retirer.</strong>`;
+    const next = STEPS[S.n];
+    const left = step === "demande" || step === "retrait" ? `<button class="btn" type="button" data-act="add">+ Ajouter</button>` : step === "reponse" ? `<button class="btn" type="button" data-act="import">Importer</button>` : "";
+    const right = next ? `<button class="btn dark" type="button" data-goto="${next.k}">${next.title} →</button>` : `<button class="btn primary" type="button" data-act="files">Bon de retour (Excel / PDF)</button>`;
+    return `<header class="appbar"><div class="wrap">
+        <div class="appbar-row"><button class="back" type="button" data-act="home" aria-label="Retour aux événements">${ICON.back}</button>
+          <div class="ev-title"><h1>${esc(ev.name)}</h1><p>${esc(fmtDate(ev.date, true))}${ev.commande ? " · N° " + esc(ev.commande) : ""}</p></div>
+          <button class="iconbtn" type="button" data-act="files" aria-label="Importer, exporter">${ICON.files}</button></div>
+        <nav class="steps" aria-label="Étapes">${STEPS.map((s) => { const c = stepCount(ev, s.k); const done = c.total && (s.k === "demande" || c.done === c.total) && !c.issues; return `<button type="button" class="step${done ? " done" : ""}" data-goto="${s.k}" ${s.k === step ? 'aria-current="step"' : ""}><span class="top"><span class="lbl">${s.title}</span></span><span class="cnt">${done ? '<span class="ok" aria-label="terminé">✓</span> ' : ""}${s.k === "demande" ? c.total + (done ? "" : " art.") : c.done + "/" + c.total}${c.issues ? ` <span class="x" aria-label="${c.issues} points à vérifier">●${c.issues}</span>` : ""}</span><span class="bar"><i style="width:${pct(s.k, c)}%"></i></span></button>`; }).join("")}</nav>
+      </div></header>
+      <main class="wrap">
+        <p class="intro"><strong>${S.n}. ${S.title}.</strong> ${S.help}</p>
+        ${stepSummary(ev, step)}
+        ${nothing ? `<div class="list"><div class="empty">${emptyMsg}</div></div>` : `
+        <div class="tools"><input class="search" id="search" type="search" placeholder="Chercher un article" value="${esc(ui.query)}" autocomplete="off">
+          ${FILTERS.length ? `<div class="chips" role="group" aria-label="Filtre">${FILTERS.map(([k, l]) => `<button type="button" data-filter="${k}" aria-pressed="${ui.filter === k}">${l}<span class="n">${counts[k]}</span></button>`).join("")}</div>` : ""}</div>
+        ${groups || `<div class="list"><div class="empty">${ui.filter === "todo" ? "Tout est fait pour cette étape." : ui.filter === "issues" ? "Aucun point à régler." : "Rien à afficher."}</div></div>`}`}
+      </main>
+      <div class="actionbar"><div class="wrap${left ? "" : " one"}">${left}${right}</div></div>`;
+  }
+  function renderSheet() {
+    const s = ui.sheet; let body = "";
+    if (s === "new") {
+      const f = ui.draftFile;
+      body = `<h2>Nouvel événement</h2>
+        <form id="newForm" class="sheet-actions" style="gap:14px">
+          <div class="fields"><div class="field wide"><label for="n-name">Nom</label><input id="n-name" required placeholder="ex. Soirée Chorba" autocomplete="off"></div>
+          <div class="field wide"><label for="n-date">Date de l'événement</label><input id="n-date" type="date" value="${todayISO()}"></div></div>
+          <div class="field"><span class="lab">Fichier de départ</span>
+            <button type="button" class="filepick${f ? " has" : ""}" data-act="pick">${ICON.sheet}<span class="fp-txt">${f ? `<b>${esc(f.name)}</b>Touche pour changer` : `<b>Excel de demande (.xlsx)</b>ou la réponse du stock (PDF)`}</span></button>
+            <p style="font-size:12.5px">Tu pourras importer d'autres fichiers à tout moment.</p></div>
+          <button class="btn primary block" type="submit">Créer l'événement</button>
+          <button class="btn ghost block" type="button" data-act="close">Annuler</button></form>`;
+    } else if (s === "add") {
+      const ev = getEv(); const retrait = view.step === "retrait";
+      const q = norm(ui.addQuery);
+      const cand = q ? ev.items.filter((i) => (retrait ? isStock(i) && !taken(i) : !inReq(i)) && norm(i.name).includes(q)).slice(0, 8) : [];
+      const sel = ui.addSel && ev.items.find((i) => i.id === ui.addSel);
+      const sheets = [...new Set([...SHEET_ORDER, ...ev.items.map((i) => i.sheet)])];
+      body = `<h2>${retrait ? "Ajout de dernière minute" : "Ajouter à la demande"}</h2><p>${retrait ? "Ce que tu prends en plus au stock. Ça part dans le bon de sortie." : "Cherche dans la liste du template, ou crée un nouvel article."}</p>
+        <form id="addForm" class="sheet-actions" style="gap:12px">
+          <div class="field"><label for="a-q">Article</label><input id="a-q" value="${esc(sel ? sel.name : ui.addQuery)}" placeholder="ex. rallonge, marmite…" autocomplete="off"></div>
+          ${!sel && cand.length ? `<div class="results">${cand.map((i) => `<button type="button" data-pick="${i.id}"><span class="s">${esc(i.sheet)}</span>${esc(i.name)}</button>`).join("")}</div>` : ""}
+          ${sel ? `<p>${esc(sel.sheet)} · ${esc(SHEET_LABEL[sel.sheet] || sel.sheet)} · ${KIND[sel.kind].label} <button type="button" class="link" data-act="unpick">Changer</button></p>` : q ? `<div class="field"><label for="a-sheet">Onglet du nouvel article</label><select id="a-sheet">${sheets.map((x) => `<option value="${esc(x)}"${x === "UST" ? " selected" : ""}>${esc(x)} · ${esc(SHEET_LABEL[x] || x)}</option>`).join("")}</select></div>` : ""}
+          <div class="fields"><div class="field"><label for="a-qty">Quantité</label><input id="a-qty" inputmode="decimal" placeholder="ex. 2"></div>
+          <div class="field"><label for="a-rem">Remarque</label><input id="a-rem" placeholder="facultatif" autocomplete="off"></div></div>
+          <button class="btn primary block" type="submit">Ajouter</button>
+          <button class="btn ghost block" type="button" data-act="close">Fermer</button></form>`;
+    } else if (s === "files") {
+      const ev = getEv(); const step = view.step;
+      const LBL = { demande: ["la demande", "liste à envoyer au stock"], reponse: ["les manques", "points à régler avec le stock"], retrait: ["le bon de sortie", "à faire signer au retrait"], precheck: ["le pré-check", "ce qui manque avant de rentrer"], retour: ["le bon de retour", "à faire signer au retour"] }[step];
+      body = `<h2>Fichiers</h2>
+        <h3>Exporter</h3>
+        <div class="menu">
+          <button type="button" data-act="xlsx"><b>Excel au format USNE</b><span>Quantité, Disponible, check out et check in remplis, plus un onglet « ${SUIVI} »</span></button>
+          <button type="button" data-act="pdf"><b>PDF : ${LBL[0]}</b><span>${LBL[1]}</span></button>
+          ${step === "reponse" ? `<button type="button" data-act="copy"><b>Copier les manques et les courses</b><span>Texte prêt pour WhatsApp</span></button>` : ""}
+        </div>
+        <h3>Importer</h3>
+        <div class="menu"><button type="button" data-act="import"><b>Importer un fichier</b><span>Réponse du stock (PDF ou Excel), ou un Excel exporté par l'app : tout se met à jour</span></button></div>
+        <div class="menu"><button type="button" class="danger" data-act="delete"><b>${ui.confirmDelete ? "Confirmer la suppression de « " + esc(ev.name) + " »" : "Supprimer l'événement"}</b><span>${ui.confirmDelete ? "Touche encore pour supprimer définitivement" : "Pense à exporter l'Excel avant"}</span></button></div>
+        <button class="btn ghost block" type="button" data-act="close">Fermer</button>`;
+    }
+    return `<div class="scrim" data-scrim><div class="sheet" role="dialog" aria-modal="true"><div class="grab" aria-hidden="true"></div>${body}</div></div>`;
+  }
+
+  /* ================= navigation ================= */
+  function go(v) { view = v; ui.query = ""; ui.filter = ""; ui.sheet = null; ui.confirmDelete = false; render(); window.scrollTo(0, 0); }
+  function openSheet(s) { ui.sheet = s; ui.confirmDelete = false; ui.addQuery = ""; ui.addSel = null; render(); if (s === "add") setTimeout(() => { const f = $("#a-q"); if (f) f.focus(); }, 60); }
+  function closeSheet() { ui.sheet = null; ui.draftFile = null; ui.confirmDelete = false; render(); }
+  function pickFile(mode) { pendingImport = mode; $("#fileInput").click(); }
+
+  /* ================= interactions ================= */
+  const byId = (id) => getEv().items.find((i) => i.id === id);
+  function changed() { persist(getEv()); render(); }
+  app.addEventListener("click", (e) => {
+    if (e.target.matches("[data-scrim]")) return closeSheet();
+    const t = e.target.closest("button"); if (!t) return;
+    const d = t.dataset;
+    if (d.open) { const ev = events.find((x) => x.id === d.open); return go({ name: "event", id: ev.id, step: currentStep(ev) }); }
+    if (d.goto) { view.step = d.goto; ui.filter = ""; ui.query = ""; ui.sheet = null; render(); return window.scrollTo(0, 0); }
+    if (d.filter) { ui.filter = d.filter; return render(); }
+    if (d.kind) { const it = byId(d.kind); it.kind = KIND_NEXT[it.kind]; setKindPref(it); return changed(); }
+    if (d.tick) {
+      const it = byId(d.tick);
+      if (view.step === "retrait") { if (taken(it)) { it.out = ""; it.in = ""; it.pre = ""; } else it.out = expected(it); }
+      else if (view.step === "precheck") { const b = preState(it); if (b.k !== "todo" && b.cls !== "bad") it.pre = ""; else it.pre = it.out; }
+      else { const b = backState(it); if (b.k !== "todo" && b.cls !== "bad") it.in = ""; else it.in = cmp(backRef(it), it.in) === 0 && b.cls === "bad" ? it.out : backRef(it); }
+      return changed();
+    }
+    if (d.all) { d.all.split(",").forEach((id) => { const it = byId(id); if (!it) return; if (view.step === "retrait") it.out = expected(it); else if (view.step === "precheck") it.pre = it.out; else it.in = backRef(it); }); toast("Groupe coché."); return changed(); }
+    if (d.step) {
+      const it = byId(d.id), f = d.field;
+      const ref = f === "in" ? (it.kind === "conso" ? it.pre : backRef(it)) : f === "pre" ? (it.kind === "conso" ? null : it.out) : f === "out" ? expected(it) : f === "dispo" ? it.voulu : null;
+      const base = isNum(it[f]) ? toNum(it[f]) : blank(it[f]) && isNum(ref) ? toNum(ref) : 0;
+      it[f] = Math.max(0, base + (blank(it[f]) && isNum(ref) && f !== "voulu" ? 0 : Number(d.step)));
+      if (f === "dispo") it.answered = true;
+      if (f === "voulu") it.inReq = requested(it.voulu) || it.extra || taken(it);
+      return changed();
+    }
+    if (d.unextra) { const it = byId(d.unextra); it.out = ""; it.in = ""; it.extra = false; it.inReq = requested(it.voulu); if (!it.row && !it.inReq) getEv().items = getEv().items.filter((i) => i !== it); toast("Retiré."); return changed(); }
+    if (d.pick) { ui.addSel = d.pick; render(); const f = $("#a-qty"); if (f) f.focus(); return; }
+    switch (d.act) {
+      case "home": return go({ name: "home" });
+      case "new": ui.draftFile = null; return openSheet("new");
+      case "pick": return pickFile("new");
+      case "unpick": ui.addSel = null; return render();
+      case "close": return closeSheet();
+      case "add": return openSheet("add");
+      case "files": return openSheet("files");
+      case "import": ui.sheet = null; render(); return pickFile("event");
+      case "copy": return copyText(manquesText(getEv()));
+      case "xlsx": return exportXlsx(getEv(), view.step);
+      case "pdf": return exportPdf(getEv(), view.step);
+      case "delete": {
+        if (!ui.confirmDelete) { ui.confirmDelete = true; return render(); }
+        const ev = getEv(); events = events.filter((x) => x.id !== ev.id); dbDel(ev.id); toast("Événement supprimé."); return go({ name: "home" });
+      }
+    }
+  });
+  app.addEventListener("input", (e) => {
+    const el = e.target;
+    if (el.id === "search") { ui.query = el.value; return render(); }
+    if (el.id === "a-q") { ui.addQuery = el.value; ui.addSel = null; return render(); }
+    if (el.dataset && el.dataset.field) {
+      const it = byId(el.dataset.id); const v = el.value.trim(); const f = el.dataset.field;
+      it[f] = v === "" ? (f === "voulu" ? null : "") : isNum(v) ? toNum(v) : v;
+      if (f === "dispo") it.answered = true;
+      if (f === "out" && v === "") { it.in = ""; it.pre = ""; }
+      persist(getEv());
+    }
+  });
+  app.addEventListener("change", (e) => { if (e.target.dataset && e.target.dataset.field) render(); });
+  $("#fileInput").addEventListener("change", (e) => {
+    const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+    if (pendingImport === "event" && view.name === "event") return importIntoEvent(getEv(), f);
+    const name = $("#n-name") && $("#n-name").value, date = $("#n-date") && $("#n-date").value;
+    ui.draftFile = f; render();
+    if ($("#n-name")) { $("#n-name").value = name || ""; $("#n-date").value = date || todayISO(); }
+  });
+  app.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (e.target.id === "newForm") {
+      const name = $("#n-name").value.trim(); const date = $("#n-date").value || todayISO();
+      if (!name) { toast("Donne un nom à l'événement."); $("#n-name").focus(); return; }
+      const btn = e.target.querySelector("[type=submit]"); btn.disabled = true; btn.textContent = "Lecture du fichier…";
+      try {
+        const ev = await createEvent(name, date, ui.draftFile); ui.draftFile = null;
+        go({ name: "event", id: ev.id, step: ev.replied ? "reponse" : "demande" });
+        const n = ev.items.filter(inReq).length;
+        toast(ev.fileName ? `${n} articles demandés${ev.commande ? " · N° " + ev.commande : ""}.` : "Événement créé. Importe un fichier ou ajoute les articles.");
+      } catch (err) { console.error(err); btn.disabled = false; btn.textContent = "Créer l'événement"; toast(err && err.message === "vide" ? "Aucun article trouvé : est-ce bien un fichier USNE ?" : "Impossible de lire ce fichier (Excel .xlsx ou PDF attendu)."); }
+      return;
+    }
+    if (e.target.id === "addForm") {
+      const ev = getEv(); const retrait = view.step === "retrait";
+      const qv = $("#a-qty").value.trim(); const qty = qv === "" ? 1 : isNum(qv) ? toNum(qv) : qv;
+      let it = ui.addSel && byId(ui.addSel);
+      const name = (it ? it.name : $("#a-q").value).trim();
+      if (!name) { toast("Indique l'article."); return; }
+      if (!it) { const sh = $("#a-sheet") ? $("#a-sheet").value : "UST"; it = findItem(ev, sh, name); if (!it) { it = { id: uid(), sheet: sh, row: null, name, kind: kindFor(sh, name), voulu: null, dispo: "", answered: false, out: "", pre: "", in: "", rem: "", extra: false, inReq: false }; ev.items.push(it); } }
+      const rem = $("#a-rem").value.trim(); if (rem) it.rem = rem;
+      if (retrait) { it.out = qty; if (!requested(it.voulu)) it.extra = true; if (!isStock(it)) it.kind = "durable"; it.inReq = true; }
+      else { it.voulu = qty; it.inReq = true; }
+      persist(ev, true); toast("Ajouté : " + name + " × " + fmt(qty));
+      ui.addQuery = ""; ui.addSel = null; render();
+      const f = $("#a-q"); if (f) f.focus();
+    }
+  });
+
+  /* ================= démarrage ================= */
+  function migrate(ev) {
+    ev.items = (ev.items || []).filter((i) => i.source !== "surplace").map((i) => ({
+      id: i.id || uid(), sheet: i.sheet, row: i.row || null, name: i.name, kind: i.kind || kindFor(i.sheet, i.name),
+      voulu: i.voulu ?? null, dispo: i.dispo ?? "", answered: i.answered ?? !blank(i.dispo), out: i.out ?? "", pre: i.pre ?? "", in: i.conso ? "" : i.in ?? "",
+      rem: i.rem || "", extra: i.extra ?? i.source === "ajout", inReq: i.inReq ?? (requested(i.voulu) || i.source === "ajout" || !blank(i.out)), prevVoulu: i.prevVoulu,
+    }));
+    ev.replySheets = ev.replySheets || []; return ev;
+  }
+  (async function boot() {
+    try { events = (await dbAll()).map(migrate); } catch (e) { memoryOnly = true; events = []; }
+    render();
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  })();
+  if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("sw.js").catch(() => {});
+})();
+</script>
+</body>
+</html>
