@@ -139,6 +139,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
 .stepper button { width: 36px; height: 42px; border: 0; background: none; font-size: 20px; font-weight: 600; color: var(--muted); padding: 0; }
 .stepper input { width: 52px; height: 42px; border: 0; border-inline: 1px solid var(--line); text-align: center; font-family: var(--f-num); font-weight: 600; background: var(--surface); font-size: 16px; padding: 0; }
 .stepper.sm input { width: 46px; }
+.stepper input::placeholder { color: var(--muted); opacity: .75; font-weight: 500; }
 .mini { border: 0; background: none; font-size: 12px; font-weight: 600; color: var(--muted); padding: 2px; text-decoration: underline; text-underline-offset: 2px; }
 .empty { padding: 24px 18px; text-align: center; color: var(--muted); display: grid; gap: 10px; justify-items: center; }
 .empty strong { color: var(--ink); font-size: 16px; }
@@ -238,7 +239,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
 (function () {
   "use strict";
   /* ================= référentiel ================= */
-  const APP_VERSION = "11";
+  const APP_VERSION = "12";
   const EXTRA_TAG = "Ajout dernière minute";
   const SUIVI = "Suivi événement";
   const SHEET_LABEL = { UST: "Ustensiles", SPT: "Sport", EMB: "Emballage", NET: "Nettoyage", It: "IT / audio / vidéo", AUTRE: "Mobilier et courses" };
@@ -336,7 +337,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
   /* ================= état ================= */
   let events = [];
   let view = { name: "home" };
-  const ui = { filter: "", query: "", sheet: null, draftFile: null, confirmDelete: false, addQuery: "", addSel: null };
+  const ui = { filter: "", query: "", sheet: null, draftFile: null, confirmDelete: false, addQuery: "", addSel: null, keep: new Set() };
   let memoryOnly = false;
   let pendingImport = null;
 
@@ -889,8 +890,8 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       ${memoryOnly ? `<div class="box info">L'enregistrement sur le téléphone est bloqué (navigation privée ?). Exporte l'Excel pour garder ton travail.</div>` : ""}
     </main>`;
   }
-  function stepper(id, field, value, sm) {
-    return `<div class="stepper${sm ? " sm" : ""}"><button type="button" data-step="-1" data-id="${id}" data-field="${field}" aria-label="Moins">−</button><input id="q-${field}-${id}" data-id="${id}" data-field="${field}" inputmode="decimal" value="${esc(blank(value) ? "" : value)}" aria-label="Quantité"><button type="button" data-step="1" data-id="${id}" data-field="${field}" aria-label="Plus">+</button></div>`;
+  function stepper(id, field, value, sm, hint) {
+    return `<div class="stepper${sm ? " sm" : ""}"><button type="button" data-step="-1" data-id="${id}" data-field="${field}" aria-label="Moins">−</button><input id="q-${field}-${id}" data-id="${id}" data-field="${field}" inputmode="decimal" value="${esc(blank(value) ? "" : value)}" placeholder="${esc(blank(hint) ? "0" : fmt(hint))}" aria-label="Quantité"><button type="button" data-step="1" data-id="${id}" data-field="${field}" aria-label="Plus">+</button></div>`;
   }
   const chip = (s) => (s && s.label ? `<span class="chip ${s.cls}">${esc(s.label)}</span>` : "");
   const kindChip = (it) => `<button type="button" class="chip ${KIND[it.kind].cls}" data-kind="${it.id}" aria-label="Type : ${KIND[it.kind].label}, toucher pour changer">${KIND[it.kind].label}</button>`;
@@ -901,7 +902,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       const r = repState(ev, it);
       const cls = r.cls === "bad" ? " alert" : r.k === "ok" ? " done" : r.cls === "warn" ? " warnbg" : "";
       return `<div class="item nt${cls}"><div><div class="name">${esc(it.name)}</div><div class="meta"><span>Demandé <span class="q">${esc(fmt(it.voulu))}</span></span>${it.prevVoulu != null ? `<span>(avant ${esc(fmt(it.prevVoulu))})</span>` : ""}${chip(r)}${it.kind === "conso" ? chip({ label: "Consommable", cls: "info" }) : ""}</div></div>
-        <div class="side"><span class="meta" style="margin:0">Dispo</span>${stepper(it.id, "dispo", it.dispo, true)}</div></div>`;
+        <div class="side"><span class="meta" style="margin:0">Dispo</span>${stepper(it.id, "dispo", it.dispo, true, isNum(it.voulu) ? it.voulu : "")}</div></div>`;
     }
     if (step === "retrait") {
       const on = taken(it), s = outState(it), r = repState(ev, it), zero = !on && r.k === "zero";
@@ -913,7 +914,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     const f = pre ? "pre" : "in";
     const b = pre ? preState(it) : backState(it);
     const preMeta = !pre && it.preOk && !blank(it.pre) ? `<span>Pré-check <span class="q">${esc(fmt(it.pre))}</span></span>` : "";
-    if (it.kind === "conso") return `<div class="item nt"><div><div class="name">${esc(it.name)}</div><div class="meta"><span>Sorti <span class="q">${esc(fmt(it.out))}</span></span>${preMeta}${chip(b)}</div></div><div class="side"><span class="meta" style="margin:0">${pre ? "Reste à rendre" : "Reste rendu"}</span>${stepper(it.id, f, pre ? it.pre : consoIn(it), true)}</div></div>`;
+    if (it.kind === "conso") return `<div class="item nt"><div><div class="name">${esc(it.name)}</div><div class="meta"><span>Sorti <span class="q">${esc(fmt(it.out))}</span></span>${preMeta}${chip(b)}</div></div><div class="side"><span class="meta" style="margin:0">${pre ? "Reste à rendre" : "Reste rendu"}</span>${stepper(it.id, f, blank(pre ? it.pre : consoIn(it)) ? 0 : pre ? it.pre : consoIn(it), true)}</div></div>`;
     const on = b.k !== "todo";
     const live = on ? chip(b) : liveDiff(shown(it, f), it.out);
     return `<div class="item${b.cls === "bad" ? " alert" : on ? " done" : ""}"><button type="button" class="tick" role="checkbox" aria-checked="${on}" data-tick="${it.id}" aria-label="${pre ? "Compté" : "Rendu"} : ${esc(it.name)}">${ICON.check}</button>
@@ -963,7 +964,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     if (!FILTERS.some(([k]) => k === ui.filter) || (ui.filter === "todo" && !counts.todo)) ui.filter = step === "cbilan" ? "all" : counts.todo ? "todo" : "all";
     const q = norm(ui.query);
     const shown = all.filter((i) => !q || norm(i.name + " " + (i.rem || "")).includes(q))
-      .filter((i) => ui.filter === "all" || (ui.filter === "todo" && st(i) === "todo") || (ui.filter === "issues" && st(i) === "diff") || (ui.filter === "done" && st(i) !== "todo" && (step !== "cbilan" || st(i) === "done")));
+      .filter((i) => ui.keep.has(i.id) || ui.filter === "all" || (ui.filter === "todo" && st(i) === "todo") || (ui.filter === "issues" && st(i) === "diff") || (ui.filter === "done" && st(i) !== "todo" && (step !== "cbilan" || st(i) === "done")));
     const byShop = step !== "cstock";
     const keyOf = (i) => (byShop ? shopOf(i) : i.kind !== "hors" ? "~manque" : "~food");
     const keys = [...new Set(shown.map(keyOf))].sort((a, b) => (byShop ? SHOP_ORDER.indexOf(a) - SHOP_ORDER.indexOf(b) : a.localeCompare(b)));
@@ -1037,7 +1038,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     if (step === "demande") ui.filter = "all";
     const q = norm(ui.query);
     const shown = all.filter((i) => !q || norm(i.name + " " + i.rem + " " + i.sheet).includes(q))
-      .filter((i) => ui.filter === "all" || (ui.filter === "todo" && st(i) === "todo") || (ui.filter === "issues" && isIssue(i)) || (ui.filter === "done" && isDone(i)));
+      .filter((i) => ui.keep.has(i.id) || ui.filter === "all" || (ui.filter === "todo" && st(i) === "todo") || (ui.filter === "issues" && isIssue(i)) || (ui.filter === "done" && isDone(i)));
     const keyOf = (i) => ((step === "retour" || step === "precheck") && i.kind === "conso" ? "~conso" : step === "demande" && !isStock(i) ? "~hors" : i.sheet);
     const keys = [...new Set(shown.map(keyOf))].sort((a, b) => (a[0] === "~" ? 1 : 0) - (b[0] === "~" ? 1 : 0) || sortSheets(a, b));
     const groups = keys.map((k) => {
@@ -1136,7 +1137,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
   }
 
   /* ================= navigation ================= */
-  function go(v) { view = v; ui.query = ""; ui.filter = ""; ui.sheet = null; ui.confirmDelete = false; render(); window.scrollTo(0, 0); }
+  function go(v) { view = v; ui.keep.clear(); ui.query = ""; ui.filter = ""; ui.sheet = null; ui.confirmDelete = false; render(); window.scrollTo(0, 0); }
   function openSheet(s) { ui.sheet = s; ui.confirmDelete = false; ui.addQuery = ""; ui.addSel = null; render(); if (s === "add") setTimeout(() => { const f = $("#a-q"); if (f) f.focus(); }, 60); }
   function closeSheet() { ui.sheet = null; ui.draftFile = null; ui.confirmDelete = false; render(); }
   function pickFile(mode) { pendingImport = mode; $("#fileInput").click(); }
@@ -1149,24 +1150,24 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     const t = e.target.closest("button"); if (!t) return;
     const d = t.dataset;
     if (d.open) { const ev = events.find((x) => x.id === d.open); return go({ name: "event", id: ev.id, mode: "materiel", step: currentStep(ev) }); }
-    if (d.mode) { const ev = getEv(); view.mode = d.mode; view.step = d.mode === "courses" ? cCurrent(ev) : currentStep(ev); ui.filter = ""; ui.query = ""; render(); return window.scrollTo(0, 0); }
+    if (d.mode) { ui.keep.clear(); const ev = getEv(); view.mode = d.mode; view.step = d.mode === "courses" ? cCurrent(ev) : currentStep(ev); ui.filter = ""; ui.query = ""; render(); return window.scrollTo(0, 0); }
     if (d.nocourse) { const it = byId(d.nocourse); it.noCourse = true; it.course = false; toast(it.name + " retiré des courses."); return changed(); }
     if (d.shop) { const it = byId(d.shop); const i = SHOP_ORDER.indexOf(shopOf(it)); it.shop = SHOP_ORDER[(i + 1) % SHOP_ORDER.length]; return changed(); }
-    if (d.goto) { view.step = d.goto; ui.filter = ""; ui.query = ""; ui.sheet = null; render(); return window.scrollTo(0, 0); }
-    if (d.filter) { ui.filter = d.filter; return render(); }
+    if (d.goto) { ui.keep.clear(); view.step = d.goto; ui.filter = ""; ui.query = ""; ui.sheet = null; render(); return window.scrollTo(0, 0); }
+    if (d.filter) { ui.keep.clear(); ui.filter = d.filter; return render(); }
     if (d.kind) { const it = byId(d.kind); it.kind = KIND_NEXT[it.kind]; setKindPref(it); return changed(); }
     if (d.tick) {
-      const it = byId(d.tick);
+      const it = byId(d.tick); ui.keep.delete(it.id);
       const f = FIELD[view.step] || "in";
       const ok = f + "Ok";
       if (it[ok]) it[ok] = false;
       else { if (blank(it[f])) it[f] = shown(it, f); it[ok] = true; toast(it.name + " : " + fmt(it[f]) + " ✓"); }
       return changed();
     }
-    if (d.all) { d.all.split(",").forEach((id) => { const it = byId(id); if (!it) return; const f = FIELD[view.step] || "in"; if (blank(it[f])) it[f] = shown(it, f); it[f + "Ok"] = true; }); toast("Groupe coché."); return changed(); }
+    if (d.all) { d.all.split(",").forEach((id) => { const it = byId(id); if (!it) return; ui.keep.delete(id); const f = FIELD[view.step] || "in"; if (blank(it[f])) it[f] = shown(it, f); it[f + "Ok"] = true; }); toast("Groupe coché."); return changed(); }
     if (d.step) {
-      const it = byId(d.id), f = d.field;
-      const ref = it.kind === "conso" && (f === "pre" || f === "in") ? (f === "in" ? consoIn(it) : null) : f === "dispo" || f === "voulu" ? null : shown(it, f);
+      const it = byId(d.id), f = d.field; ui.keep.add(it.id);
+      const ref = it.kind === "conso" && (f === "pre" || f === "in") ? (f === "in" ? consoIn(it) : null) : f === "dispo" ? it.voulu : f === "voulu" ? null : shown(it, f);
       const base = isNum(it[f]) ? toNum(it[f]) : isNum(ref) ? toNum(ref) : 0;
       it[f] = Math.max(0, base + Number(d.step));
       if (f === "dispo") it.answered = true;
@@ -1202,7 +1203,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     if (el.id === "search") { ui.query = el.value; return render(); }
     if (el.id === "a-q") { ui.addQuery = el.value; ui.addSel = null; return render(); }
     if (el.dataset && el.dataset.field) {
-      const it = byId(el.dataset.id); const v = el.value.trim(); const f = el.dataset.field;
+      const it = byId(el.dataset.id); const v = el.value.trim(); const f = el.dataset.field; ui.keep.add(it.id);
       it[f] = v === "" ? (f === "voulu" ? null : "") : isNum(v) ? toNum(v) : v;
       if (f === "dispo") it.answered = true;
       if (f === "out" && v === "") it.outOk = false;
