@@ -238,7 +238,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
 (function () {
   "use strict";
   /* ================= référentiel ================= */
-  const APP_VERSION = "10";
+  const APP_VERSION = "11";
   const EXTRA_TAG = "Ajout dernière minute";
   const SUIVI = "Suivi événement";
   const SHEET_LABEL = { UST: "Ustensiles", SPT: "Sport", EMB: "Emballage", NET: "Nettoyage", It: "IT / audio / vidéo", AUTRE: "Mobilier et courses" };
@@ -282,8 +282,19 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     return "COLRUYT";
   }
   const shopOf = (it) => it.shop || guessShop(it);
-  const courseItems = (ev) => ev.items.filter((i) => (i.kind === "hors" && i.inReq) || i.course);
-  const cNeed = (it) => (it.course && it.kind !== "hors" ? it.courseQty : it.voulu);
+  // Consommable pas (assez) présent au stock : il part tout seul dans les courses.
+  // Couvert par le stock = max(dispo annoncé, quantité réellement sortie au retrait).
+  const consoCovered = (it) => Math.max(isNum(it.dispo) ? toNum(it.dispo) : 0, it.outOk && isNum(it.out) ? toNum(it.out) : 0);
+  const MISSING = ["zero", "part", "none", "tbc"];
+  function consoMissing(ev, it) {
+    if (it.kind !== "conso" || !it.inReq || it.noCourse || !isNum(it.voulu)) return false;
+    if (it.course && !isNum(it.dispo) && !it.answered) return true;
+    if (!MISSING.includes(repState(ev, it).k) && !(it.course)) return false;
+    return toNum(it.voulu) - consoCovered(it) > 0;
+  }
+  const isFood = (i) => i.kind === "hors" && i.inReq;
+  const courseItems = (ev) => ev.items.filter((i) => isFood(i) || consoMissing(ev, i));
+  const cNeed = (it) => (it.kind !== "hors" ? (isNum(it.voulu) ? Math.max(0, toNum(it.voulu) - consoCovered(it)) : it.voulu) : it.voulu);
   const cUnit = (it) => (it.kind === "hors" ? (it.rem || "") : "");
   const withUnit = (v, it) => fmt(v) + (cUnit(it) && !blank(v) ? " " + cUnit(it) : "");
   function cRestWith(it, sv) { const n = cNeed(it); if (!isNum(n)) return isNum(sv) && toNum(sv) > 0 ? "à vérifier" : n; return Math.max(0, toNum(n) - (isNum(sv) ? toNum(sv) : 0)); }
@@ -498,6 +509,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
         const it = cands.find((i) => !blank(i.out)) || cands.find((i) => i.inReq) || cands[0];
         if (!it) return; it._suivi = true;
         const k = K[norm(cellVal(row.getCell(H["type"] || 3)))]; if (k) it.kind = k;
+        if (H["courses"] && /retir/i.test(String(cellVal(row.getCell(H["courses"])) ?? ""))) it.noCourse = true;
         if (H["pre-check"]) { const v = cellVal(row.getCell(H["pre-check"])); if (!blank(v)) { it.pre = /^consomm/i.test(String(v)) ? "" : v; it.preOk = true; } }
       });
     }
@@ -511,7 +523,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
         const manque = /manque/i.test(String(g("source") ?? ""));
         let it = items.find((i) => norm(i.name) === norm(name) && (manque ? i.kind !== "hors" : i.kind === "hors")) || items.find((i) => norm(i.name) === norm(name));
         if (!it) { it = { id: uid(), sheet: "AUTRE", row: null, name, kind: "hors", voulu: g("demande"), dispo: "", answered: false, out: "", pre: "", in: "", rem: String(g("unite") ?? ""), extra: false, inReq: true }; items.push(it); }
-        if (manque) { it.course = true; it.courseQty = g("demande"); }
+        if (manque) { it.course = true; it.noCourse = false; }
         const st = g("pris au stock"), by = g("achete");
         if (!blank(st)) { it.stk = st; it.stkOk = true; }
         if (!blank(by)) { it.buy = by; it.buyOk = true; }
@@ -589,7 +601,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       if (!it) { ev.items.push(p); if (p.inReq) n++; continue; }
       let touched = false;
       for (const k of ["voulu", "dispo", "out", "pre", "in"]) if (!blank(p[k]) && cmp(p[k], it[k]) !== 0) { it[k] = p[k]; touched = true; }
-      for (const k of ["outOk", "preOk", "inOk", "stkOk", "buyOk", "course"]) if (p[k]) it[k] = true;
+      for (const k of ["outOk", "preOk", "inOk", "stkOk", "buyOk", "course", "noCourse"]) if (p[k]) it[k] = true;
       for (const k of ["stk", "buy", "shop", "courseQty"]) if (!blank(p[k])) it[k] = p[k];
       if (!blank(p.dispo)) it.answered = true;
       if (p.extra) it.extra = true;
@@ -676,7 +688,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     ws.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
     ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF18222E" } };
     for (const it of [...its].sort((a, b) => SHOP_ORDER.indexOf(shopOf(a)) - SHOP_ORDER.indexOf(shopOf(b)))) {
-      const row = ws.addRow([SHOPS[shopOf(it)], it.name, cUnit(it) || null, cellOut(cNeed(it)), it.stkOk ? cellOut(it.stk) : null, cellOut(cRest(it)), it.buyOk ? cellOut(it.buy) : null, cellOut(cLeft(it)), cEtat(it), it.course && it.kind !== "hors" ? "Manque stock" : "Courses"]);
+      const row = ws.addRow([SHOPS[shopOf(it)], it.name, cUnit(it) || null, cellOut(cNeed(it)), it.stkOk ? cellOut(it.stk) : null, cellOut(cRest(it)), it.buyOk ? cellOut(it.buy) : null, cellOut(cLeft(it)), cEtat(it), it.kind !== "hors" ? "Manque stock" : "Courses"]);
       if (leftNum(it) > 0) { row.getCell(8).font = { bold: true, color: { argb: "FFB3261E" } }; row.getCell(9).font = { bold: true, color: { argb: "FFB3261E" } }; }
       else row.getCell(9).font = { color: { argb: "FF1D7A4A" } };
     }
@@ -700,7 +712,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       for (const sh of SHOP_ORDER) {
         const g = its.filter((i) => shopOf(i) === sh); if (!g.length) continue;
         doc.autoTable({ startY: y, margin: { left: 40, right: 40 }, head: [[pdfTxt(SHOPS[sh]), "Demandé", "Stock", "À acheter", "Acheté", "Reste"]],
-          body: g.map((i) => [pdfTxt(i.name + (cUnit(i) ? " (" + cUnit(i) + ")" : "") + (i.course && i.kind !== "hors" ? " - manque stock" : "")), pdfTxt(fmt(cNeed(i))), pdfTxt(i.stkOk ? fmt(i.stk) : "-"), pdfTxt(fmt(cRest(i))), pdfTxt(i.buyOk ? fmt(i.buy) : "-"), pdfTxt(leftNum(i) > 0 ? fmt(cLeft(i)) : "0")]),
+          body: g.map((i) => [pdfTxt(i.name + (cUnit(i) ? " (" + cUnit(i) + ")" : "") + (i.kind !== "hors" ? " - manque stock" : "")), pdfTxt(fmt(cNeed(i))), pdfTxt(i.stkOk ? fmt(i.stk) : "-"), pdfTxt(fmt(cRest(i))), pdfTxt(i.buyOk ? fmt(i.buy) : "-"), pdfTxt(leftNum(i) > 0 ? fmt(cLeft(i)) : "0")]),
           styles: { fontSize: 9.5, cellPadding: 4 }, headStyles: { fillColor: [24, 34, 46] }, columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" } },
           didParseCell: (h) => { if (h.section === "body" && h.column.index === 5) { if (h.cell.raw !== "0") { h.cell.styles.textColor = [179, 38, 30]; h.cell.styles.fontStyle = "bold"; } else h.cell.styles.textColor = [29, 122, 74]; } } });
         y = doc.lastAutoTable.finalY + 14;
@@ -747,13 +759,13 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       write(ws, r, it);
     }
     const su = wb.addWorksheet(SUIVI);
-    su.columns = [{ header: "Onglet", width: 9 }, { header: "Article", width: 34 }, { header: "Type", width: 13 }, { header: "Demandé", width: 10 }, { header: "Dispo stock", width: 12 }, { header: "Pris (check out)", width: 15 }, { header: "Pré-check", width: 11 }, { header: "Rendu (check in)", width: 15 }, { header: "État", width: 16 }, { header: "Remarque", width: 26 }];
+    su.columns = [{ header: "Onglet", width: 9 }, { header: "Article", width: 34 }, { header: "Type", width: 13 }, { header: "Demandé", width: 10 }, { header: "Dispo stock", width: 12 }, { header: "Pris (check out)", width: 15 }, { header: "Pré-check", width: 11 }, { header: "Rendu (check in)", width: 15 }, { header: "État", width: 16 }, { header: "Remarque", width: 26 }, { header: "Courses", width: 10 }];
     su.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
     su.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF18222E" } };
     for (const it of ev.items.filter((i) => inReq(i) || taken(i)).sort((a, b) => sortSheets(a.sheet, b.sheet))) {
       const st = finalState(ev, it);
       const rem = [it.extra ? EXTRA_TAG : "", it.rem || ""].filter(Boolean).join(" – ");
-      const r = su.addRow([it.sheet, it.name, KIND[it.kind].label, cellOut(it.voulu), cellOut(it.dispo), cellOut(it.outOk ? it.out : null), cellOut(it.preOk || it.kind === "conso" ? it.pre : null), it.kind === "conso" && taken(it) ? (blank(consoIn(it)) || toNum(consoIn(it)) === 0 ? "consommé" : cellOut(consoIn(it))) : cellOut(it.inOk ? it.in : null), st, rem || null]);
+      const r = su.addRow([it.sheet, it.name, KIND[it.kind].label, cellOut(it.voulu), cellOut(it.dispo), cellOut(it.outOk ? it.out : null), cellOut(it.preOk || it.kind === "conso" ? it.pre : null), it.kind === "conso" && taken(it) ? (blank(consoIn(it)) || toNum(consoIn(it)) === 0 ? "consommé" : cellOut(consoIn(it))) : cellOut(it.inOk ? it.in : null), st, rem || null, it.noCourse ? "retiré" : null]);
       if (/Manque|manque|Indisponible|confirmer|Pas de réponse|rifier/.test(st)) r.getCell(9).font = { bold: true, color: { argb: "FFB3261E" } };
     }
     su.views = [{ state: "frozen", ySplit: 1 }];
@@ -953,16 +965,18 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     const shown = all.filter((i) => !q || norm(i.name + " " + (i.rem || "")).includes(q))
       .filter((i) => ui.filter === "all" || (ui.filter === "todo" && st(i) === "todo") || (ui.filter === "issues" && st(i) === "diff") || (ui.filter === "done" && st(i) !== "todo" && (step !== "cbilan" || st(i) === "done")));
     const byShop = step !== "cstock";
-    const keyOf = (i) => (byShop ? shopOf(i) : i.course && i.kind !== "hors" ? "~manque" : "~food");
+    const keyOf = (i) => (byShop ? shopOf(i) : i.kind !== "hors" ? "~manque" : "~food");
     const keys = [...new Set(shown.map(keyOf))].sort((a, b) => (byShop ? SHOP_ORDER.indexOf(a) - SHOP_ORDER.indexOf(b) : a.localeCompare(b)));
     const row = (it) => {
-      const sm = it.course && it.kind !== "hors" ? chip({ label: "Manque stock", cls: "bad" }) : "";
+      const rs = it.kind !== "hors" ? repState(ev, it) : null;
+      const sm = rs ? chip({ label: rs.k === "tbc" ? "Stock : à confirmer" : rs.k === "none" ? "Stock : pas de réponse" : rs.k === "ok" ? "Manque stock" : "Stock : " + rs.label.toLowerCase(), cls: rs.k === "tbc" || rs.k === "none" ? "warn" : "bad" }) : "";
+      const rm = rs && step === "cstock" ? `<button type="button" class="mini" data-nocourse="${it.id}">Retirer</button>` : "";
       if (step === "cstock") {
         const on = !!it.stkOk, sv = shown_(it, "stk"), rest = cRestWith(it, sv);
         const info = isNum(sv) && toNum(sv) > 0 ? (isNum(rest) && rest === 0 ? chip({ label: "Tout au stock", cls: "good" }) : chip({ label: "À acheter " + withUnit(rest, it), cls: "warn" })) : on ? chip({ label: "À acheter " + withUnit(rest, it), cls: "warn" }) : "";
         return `<div class="item${on ? " done" : ""}"><button type="button" class="tick" role="checkbox" aria-checked="${on}" data-tick="${it.id}" aria-label="Vérifié au stock : ${esc(it.name)}">${ICON.check}</button>
           <div><div class="name">${esc(it.name)}</div><div class="meta"><span>Demandé <span class="q">${esc(withUnit(cNeed(it), it))}</span></span>${sm}${info}</div></div>
-          <div class="side"><span class="meta" style="margin:0">Pris au stock</span>${stepper(it.id, "stk", sv, true)}</div></div>`;
+          <div class="side"><span class="meta" style="margin:0">Pris au stock</span>${stepper(it.id, "stk", sv, true)}${rm}</div></div>`;
       }
       if (step === "cachat") {
         const on = !!it.buyOk, sv = shown_(it, "buy"), x = cRest(it);
@@ -979,7 +993,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     const groups = keys.map((k) => {
       const its = shown.filter((i) => keyOf(i) === k);
       const todoIds = step !== "cbilan" ? its.filter((i) => st(i) === "todo").map((i) => i.id) : [];
-      const label = k === "~food" ? "Alimentaire" : k === "~manque" ? "Manques du stock" : SHOPS[k];
+      const label = k === "~food" ? "Alimentaire" : k === "~manque" ? "Consommables absents du stock" : SHOPS[k];
       return `<section class="group"><div class="ghead"><span class="code">${byShop ? "•" : "•"}</span><h2>${esc(label)}</h2><span class="cnt">${its.length}</span>${todoIds.length > 1 && step === "cachat" ? `<button type="button" class="link" data-all="${todoIds.join(",")}">Tout acheté</button>` : ""}</div><div class="list">${its.map(row).join("")}</div></section>`;
     }).join("");
     const ci = courseItems(ev);
@@ -988,11 +1002,9 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       : step === "cachat"
       ? [["w", ci.filter(needBuy).length, "À acheter"], ["g", ci.filter((i) => i.buyOk).length, "Achetés"], ["r", ci.filter((i) => i.buyOk && leftNum(i) > 0).length, "Pas trouvé"], ["", ci.filter((i) => needBuy(i) && !i.buyOk).length, "Restants"]]
       : [["", ci.length, "Articles"], ["g", ci.filter((i) => cStk(i) > 0).length, "Du stock"], ["g", ci.filter((i) => i.buyOk).length, "Achetés"], ["r", ci.filter((i) => leftNum(i) > 0).length, "Reste"]];
-    const manques = ev.items.filter((i) => isStock(i) && i.kind === "conso" && i.inReq && !i.course && ["zero", "part"].includes(repState(ev, i).k));
     const summary = `<div class="summary">${tiles.map(([c, v, l]) => `<div class="${c}"><b>${v}</b><span>${l}</span></div>`).join("")}</div>
-      ${step === "cstock" && manques.length ? `<div class="box warn"><b>${manques.length} consommable${manques.length > 1 ? "s" : ""} manque${manques.length > 1 ? "nt" : ""} au stock</b>${esc(manques.map((i) => i.name).join(", "))}.<div class="row"><button class="btn" type="button" data-act="cmanques">Ajouter aux courses</button></div></div>` : ""}
       ${step === "cbilan" ? `<div class="box info"><b>Compte rendu</b>PDF et Excel avec, pour chaque article, ce qui vient du stock, ce qui a été acheté et ce qui reste.<div class="row"><button class="btn" type="button" data-act="cpdf">PDF</button><button class="btn" type="button" data-act="cxlsx">Excel</button><button class="btn" type="button" data-act="ccopy">Copier le reste</button></div></div>` : ""}`;
-    const empty = !ci.length ? `<div class="list"><div class="empty"><strong>Aucun article de courses.</strong>Les articles de type « Hors stock » de ta demande arrivent ici (onglet AUTRE : chips, menthe, poulet…). Tu peux aussi en ajouter.<button class="btn dark" type="button" data-act="cadd">+ Ajouter un article</button></div></div>`
+    const empty = !ci.length ? `<div class="list"><div class="empty"><strong>Aucun article de courses.</strong>Les articles « Hors stock » de ta demande (chips, menthe, poulet…) et les consommables absents du stock arrivent ici. Tu peux aussi en ajouter.<button class="btn dark" type="button" data-act="cadd">+ Ajouter un article</button></div></div>`
       : step === "cachat" && !all.length ? `<div class="list"><div class="empty"><strong>Rien à acheter.</strong>Tout a été trouvé au stock.</div></div>` : "";
     const next = CSTEPS[S.n];
     const left = step === "cstock" ? `<button class="btn" type="button" data-act="cadd">+ Ajouter</button>` : step === "cachat" ? `<button class="btn" type="button" data-act="ccopy">Copier</button>` : `<button class="btn" type="button" data-act="cxlsx">Excel</button>`;
@@ -1138,6 +1150,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     const d = t.dataset;
     if (d.open) { const ev = events.find((x) => x.id === d.open); return go({ name: "event", id: ev.id, mode: "materiel", step: currentStep(ev) }); }
     if (d.mode) { const ev = getEv(); view.mode = d.mode; view.step = d.mode === "courses" ? cCurrent(ev) : currentStep(ev); ui.filter = ""; ui.query = ""; render(); return window.scrollTo(0, 0); }
+    if (d.nocourse) { const it = byId(d.nocourse); it.noCourse = true; it.course = false; toast(it.name + " retiré des courses."); return changed(); }
     if (d.shop) { const it = byId(d.shop); const i = SHOP_ORDER.indexOf(shopOf(it)); it.shop = SHOP_ORDER[(i + 1) % SHOP_ORDER.length]; return changed(); }
     if (d.goto) { view.step = d.goto; ui.filter = ""; ui.query = ""; ui.sheet = null; render(); return window.scrollTo(0, 0); }
     if (d.filter) { ui.filter = d.filter; return render(); }
@@ -1176,11 +1189,6 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       case "cpdf": return exportCoursesPdf(getEv());
       case "cxlsx": return exportCoursesXlsx(getEv());
       case "cadd": return openSheet("cadd");
-      case "cmanques": {
-        const ev = getEv(); let n = 0;
-        for (const i of ev.items) if (isStock(i) && i.kind === "conso" && i.inReq && !i.course && ["zero", "part"].includes(repState(ev, i).k)) { i.course = true; i.courseQty = repState(ev, i).k === "zero" || !isNum(i.dispo) ? i.voulu : toNum(i.voulu) - toNum(i.dispo); n++; }
-        toast(n + " article" + (n > 1 ? "s" : "") + " ajouté" + (n > 1 ? "s" : "") + " aux courses."); return changed();
-      }
       case "xlsx": return exportXlsx(getEv(), view.step);
       case "pdf": return exportPdf(getEv(), view.step);
       case "delete": {

@@ -34,7 +34,8 @@ Une fois ouverte une première fois, elle marche aussi sans réseau (pratique da
 Les articles de type *Hors stock* de la demande (chips, menthe, poulet…), plus ceux que tu ajoutes.
 
 1. **Au stock** : pour chaque article, compte ce que tu trouves et mets de côté (− / +), puis coche. 0 = rien trouvé.
-   Les consommables qui manquent au stock (ex. plateau alu) peuvent être ajoutés aux courses d'un tap.
+   Les consommables pas (assez) présents au stock (indisponible, manque, absent de la réponse, tbc) y sont ajoutés automatiquement,
+   avec la quantité manquante. S'ils sortent finalement du stock au retrait, ils disparaissent de la liste. *Retirer* pour en enlever un.
 2. **Achats** (en magasin) : liste par magasin (Colruyt / Aldi, Épicerie, Boucherie, Albert Heijn, Sofabel, Desserts).
    Le compteur propose ce qui reste à acheter ; coche ce que tu achètes. Touche le magasin pour le changer.
 3. **Bilan** : pour chaque article, demandé / pris au stock / acheté / reste. Ex. chips : 2 demandées → 1 du stock, 1 achetée.
