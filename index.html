@@ -180,6 +180,12 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
 .mini-steps .bar { height: 4px; border-radius: 99px; background: var(--line); overflow: hidden; }
 .mini-steps .bar i { display: block; height: 100%; background: var(--good); }
 .evlist { display: grid; gap: 10px; }
+.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; background: var(--sunk); border: 1px solid var(--line); border-radius: 12px; padding: 3px; }
+.modes button { border: 0; background: none; border-radius: 9px; padding: 7px 8px; font-family: var(--f-display); font-weight: 700; font-size: 15px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); display: flex; align-items: center; justify-content: center; gap: 6px; }
+.modes button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.modes .n { font-family: var(--f-num); font-size: 11px; font-weight: 600; background: var(--accent); color: var(--accent-ink); border-radius: 99px; padding: 0 6px; letter-spacing: 0; }
+.steps.c3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.shopchip { border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
 .version { margin: 8px 0 0; text-align: center; font-family: var(--f-num); font-size: 11.5px; color: var(--muted); }
 .section-lbl { margin: 6px 2px 0; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 
@@ -232,7 +238,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
 (function () {
   "use strict";
   /* ================= référentiel ================= */
-  const APP_VERSION = "9";
+  const APP_VERSION = "10";
   const EXTRA_TAG = "Ajout dernière minute";
   const SUIVI = "Suivi événement";
   const SHEET_LABEL = { UST: "Ustensiles", SPT: "Sport", EMB: "Emballage", NET: "Nettoyage", It: "IT / audio / vidéo", AUTRE: "Mobilier et courses" };
@@ -257,6 +263,58 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     { k: "precheck", n: 4, title: "Pré-check", help: "Sur le lieu, avant de ranger, tout seul : ajuste le compteur à ce que tu as, puis coche. Un manque s'affiche en rouge. Pour les consommables, note seulement le reste à rendre." },
     { k: "retour", n: 5, title: "Retour", help: "Au stock, avec le responsable : le compteur reprend ton pré-check. Ajuste si besoin, puis coche ce qui est rendu." },
   ];
+  /* ---------- Courses (alimentaire hors stock) ---------- */
+  const COURSES = "Courses";
+  const CSTEPS = [
+    { k: "cstock", n: 1, title: "Au stock", help: "Au stock, regarde ce qui est déjà là : compte ce que tu mets de côté avec − / +, puis coche. 0 = rien trouvé. Le reste part dans la liste d'achats." },
+    { k: "cachat", n: 2, title: "Achats", help: "En magasin : le compteur propose ce qui reste à acheter. Ajuste si besoin, puis coche. Touche le magasin pour le changer." },
+    { k: "cbilan", n: 3, title: "Bilan", help: "Pour chaque article : ce qui vient du stock, ce qui a été acheté et ce qui manque encore. Exporte le compte rendu en PDF ou Excel." },
+  ];
+  const SHOPS = { COLRUYT: "Colruyt / Aldi", EPICERIE: "Épicerie", BOUCHERIE: "Boucherie", AH: "Albert Heijn", SOFABEL: "Sofabel", DESSERT: "Desserts" };
+  const SHOP_ORDER = Object.keys(SHOPS);
+  function guessShop(it) {
+    const t = norm(it.name + " " + (it.rem || ""));
+    if (/albert heijn|\bah\b/.test(t)) return "AH";
+    if (/sofabel/.test(t)) return "SOFABEL";
+    if (/tiramisu|dessert|gateau|baklava|patisserie orientale/.test(t)) return "DESSERT";
+    if (/poulet|viande|boeuf|agneau|dinde|merguez|hache|veau|kefta|saucisse/.test(t)) return "BOUCHERIE";
+    if (/oignon|menthe|persil|corr?iandre|\bail\b|filo|amande|fleur d.?oranger|sucre glace|sucre semoule|\bsel\b|poivre|curcuma|gingembre|cannelle|cumin|paprika|ras el hanout|epice|safran|citron|legume|fruit/.test(t)) return "EPICERIE";
+    return "COLRUYT";
+  }
+  const shopOf = (it) => it.shop || guessShop(it);
+  const courseItems = (ev) => ev.items.filter((i) => (i.kind === "hors" && i.inReq) || i.course);
+  const cNeed = (it) => (it.course && it.kind !== "hors" ? it.courseQty : it.voulu);
+  const cUnit = (it) => (it.kind === "hors" ? (it.rem || "") : "");
+  const withUnit = (v, it) => fmt(v) + (cUnit(it) && !blank(v) ? " " + cUnit(it) : "");
+  function cRestWith(it, sv) { const n = cNeed(it); if (!isNum(n)) return isNum(sv) && toNum(sv) > 0 ? "à vérifier" : n; return Math.max(0, toNum(n) - (isNum(sv) ? toNum(sv) : 0)); }
+  const cStk = (it) => (it.stkOk && isNum(it.stk) ? toNum(it.stk) : 0);
+  const cRest = (it) => cRestWith(it, cStk(it));
+  const needBuy = (it) => { const x = cRest(it); return isNum(x) ? x > 0 : !blank(x); };
+  function cLeft(it) { const x = cRest(it); if (!it.buyOk) return x; if (!isNum(x)) return 0; return Math.max(0, x - (isNum(it.buy) ? toNum(it.buy) : 0)); }
+  const leftNum = (it) => { const l = cLeft(it); return isNum(l) ? toNum(l) : blank(l) ? 0 : 1; };
+  function cStatus(step, it) {
+    if (step === "cstock") return it.stkOk ? "done" : "todo";
+    if (step === "cachat") return !it.buyOk ? "todo" : leftNum(it) > 0 ? "diff" : "done";
+    return leftNum(it) > 0 ? "diff" : "done";
+  }
+  const cItemsFor = (ev, step) => (step === "cachat" ? courseItems(ev).filter((i) => needBuy(i) || i.buyOk) : courseItems(ev));
+  function cCount(ev, step) {
+    const its = cItemsFor(ev, step); const st = its.map((i) => cStatus(step, i));
+    return { total: its.length, done: st.filter((k) => (step === "cbilan" ? k === "done" : k !== "todo")).length, issues: step === "cachat" ? st.filter((k) => k === "diff").length : 0 };
+  }
+  function cCurrent(ev) {
+    const its = courseItems(ev);
+    if (its.some((i) => i.buyOk)) return cItemsFor(ev, "cachat").every((i) => i.buyOk) ? "cbilan" : "cachat";
+    return its.length && its.every((i) => i.stkOk) ? "cachat" : "cstock";
+  }
+  function cEtat(it) {
+    const l = leftNum(it);
+    if (l > 0) return it.buyOk ? "Reste " + fmt(cLeft(it)) : "À acheter";
+    if (!needBuy(it) && it.stkOk) return "Tout au stock";
+    return "Complet";
+  }
+  const FIELD = { retrait: "out", precheck: "pre", retour: "in", cstock: "stk", cachat: "buy" };
+
   const ICON = {
     back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
     files: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2"/></svg>',
@@ -355,7 +413,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
   }
   const backRef = (it) => (it.preOk && !blank(it.pre) ? it.pre : it.out);
   // Valeur affichée dans le compteur : la quantité saisie, sinon la valeur proposée.
-  const shown = (it, f) => (!blank(it[f]) ? it[f] : f === "out" ? expected(it) : f === "pre" ? it.out : f === "in" ? backRef(it) : "");
+  const shown = (it, f) => (!blank(it[f]) ? it[f] : f === "out" ? expected(it) : f === "pre" ? it.out : f === "in" ? backRef(it) : f === "stk" ? 0 : f === "buy" ? cRest(it) : "");
   // Écart en direct sur une ligne pas encore cochée.
   function liveDiff(val, ref) { const d = cmp(val, ref); if (!d || isNaN(d)) return ""; return chip({ label: (d > 0 ? "+" : "−") + fmt(Math.abs(d)), cls: d < 0 ? "bad" : "warn" }); }
   // Consommable : le reste compté au pré-check vaut reste rendu tant que le retour ne dit pas autre chose.
@@ -399,10 +457,11 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
 
   /* ================= lecture Excel (template USNE) ================= */
   function parseWorkbook(wb) {
-    const items = []; let commande = ""; let suivi = null;
+    const items = []; let commande = ""; let suivi = null; let coursesWs = null;
     wb.eachSheet((ws) => {
       const sheet = ws.name.trim();
       if (sheet === SUIVI) { suivi = ws; return; }
+      if (sheet === COURSES) { coursesWs = ws; return; }
       let start = 3;
       for (let r = 1; r <= Math.min(10, ws.rowCount); r++) {
         const row = ws.getRow(r);
@@ -440,6 +499,23 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
         if (!it) return; it._suivi = true;
         const k = K[norm(cellVal(row.getCell(H["type"] || 3)))]; if (k) it.kind = k;
         if (H["pre-check"]) { const v = cellVal(row.getCell(H["pre-check"])); if (!blank(v)) { it.pre = /^consomm/i.test(String(v)) ? "" : v; it.preOk = true; } }
+      });
+    }
+    if (coursesWs) {
+      const H = {}; coursesWs.getRow(1).eachCell((c, i) => (H[norm(cellVal(c))] = i));
+      const SHOPCODE = {}; for (const k of SHOP_ORDER) SHOPCODE[norm(SHOPS[k])] = k;
+      coursesWs.eachRow((row, n) => {
+        if (n === 1) return;
+        const g = (h) => (H[h] ? cellVal(row.getCell(H[h])) : null);
+        const name = String(g("article") ?? "").trim(); if (!name) return;
+        const manque = /manque/i.test(String(g("source") ?? ""));
+        let it = items.find((i) => norm(i.name) === norm(name) && (manque ? i.kind !== "hors" : i.kind === "hors")) || items.find((i) => norm(i.name) === norm(name));
+        if (!it) { it = { id: uid(), sheet: "AUTRE", row: null, name, kind: "hors", voulu: g("demande"), dispo: "", answered: false, out: "", pre: "", in: "", rem: String(g("unite") ?? ""), extra: false, inReq: true }; items.push(it); }
+        if (manque) { it.course = true; it.courseQty = g("demande"); }
+        const st = g("pris au stock"), by = g("achete");
+        if (!blank(st)) { it.stk = st; it.stkOk = true; }
+        if (!blank(by)) { it.buy = by; it.buyOk = true; }
+        const sc = SHOPCODE[norm(g("magasin"))]; if (sc) it.shop = sc;
       });
     }
     items.forEach((i) => delete i._suivi);
@@ -513,7 +589,8 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       if (!it) { ev.items.push(p); if (p.inReq) n++; continue; }
       let touched = false;
       for (const k of ["voulu", "dispo", "out", "pre", "in"]) if (!blank(p[k]) && cmp(p[k], it[k]) !== 0) { it[k] = p[k]; touched = true; }
-      for (const k of ["outOk", "preOk", "inOk"]) if (p[k]) it[k] = true;
+      for (const k of ["outOk", "preOk", "inOk", "stkOk", "buyOk", "course"]) if (p[k]) it[k] = true;
+      for (const k of ["stk", "buy", "shop", "courseQty"]) if (!blank(p[k])) it[k] = p[k];
       if (!blank(p.dispo)) it.answered = true;
       if (p.extra) it.extra = true;
       if (!it.row && p.row) it.row = p.row;
@@ -592,6 +669,58 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     }
     return { wb, rows };
   }
+  function addCoursesSheet(wb, ev) {
+    const its = courseItems(ev); if (!its.length) return;
+    const ws = wb.addWorksheet(COURSES);
+    ws.columns = [{ header: "Magasin", width: 15 }, { header: "Article", width: 32 }, { header: "Unité", width: 12 }, { header: "Demandé", width: 10 }, { header: "Pris au stock", width: 13 }, { header: "À acheter", width: 11 }, { header: "Acheté", width: 9 }, { header: "Reste", width: 8 }, { header: "État", width: 15 }, { header: "Source", width: 13 }];
+    ws.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+    ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF18222E" } };
+    for (const it of [...its].sort((a, b) => SHOP_ORDER.indexOf(shopOf(a)) - SHOP_ORDER.indexOf(shopOf(b)))) {
+      const row = ws.addRow([SHOPS[shopOf(it)], it.name, cUnit(it) || null, cellOut(cNeed(it)), it.stkOk ? cellOut(it.stk) : null, cellOut(cRest(it)), it.buyOk ? cellOut(it.buy) : null, cellOut(cLeft(it)), cEtat(it), it.course && it.kind !== "hors" ? "Manque stock" : "Courses"]);
+      if (leftNum(it) > 0) { row.getCell(8).font = { bold: true, color: { argb: "FFB3261E" } }; row.getCell(9).font = { bold: true, color: { argb: "FFB3261E" } }; }
+      else row.getCell(9).font = { color: { argb: "FF1D7A4A" } };
+    }
+    ws.views = [{ state: "frozen", ySplit: 1 }];
+  }
+  async function exportCoursesXlsx(ev) {
+    try { const wb = new ExcelJS.Workbook(); addCoursesSheet(wb, ev); if (!wb.worksheets.length) { toast("Aucun article de courses."); return; } await offer("Courses_" + safeName(ev.name) + "_" + (ev.date || todayISO()) + ".xlsx", await wb.xlsx.writeBuffer()); }
+    catch (e) { console.error(e); toast("L'Excel n'a pas pu être généré."); }
+  }
+  function exportCoursesPdf(ev) {
+    try {
+      const its = courseItems(ev); if (!its.length) { toast("Aucun article de courses."); return; }
+      const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: "pt", format: "a4" });
+      doc.setFont("helvetica", "bold"); doc.setFontSize(17); doc.text(pdfTxt("Courses - compte rendu"), 40, 50);
+      doc.setFontSize(12); doc.text(pdfTxt(ev.name + (ev.commande ? "  ·  N° " + ev.commande : "")), 40, 70);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(110);
+      const d = new Date(); doc.text(pdfTxt(`Événement : ${fmtDate(ev.date, true)}  ·  Édité le ${d.toLocaleDateString("fr-BE")} à ${d.toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" })}`), 40, 86); doc.setTextColor(0);
+      const fromStock = its.filter((i) => cStk(i) > 0).length, bought = its.filter((i) => i.buyOk).length, rest = its.filter((i) => leftNum(i) > 0);
+      doc.setFont("helvetica", "bold"); doc.text(pdfTxt(`${its.length} articles  ·  ${fromStock} pris (en tout ou en partie) au stock  ·  ${bought} achetés  ·  ${rest.length} encore à acheter`), 40, 106); doc.setFont("helvetica", "normal");
+      let y = 120;
+      for (const sh of SHOP_ORDER) {
+        const g = its.filter((i) => shopOf(i) === sh); if (!g.length) continue;
+        doc.autoTable({ startY: y, margin: { left: 40, right: 40 }, head: [[pdfTxt(SHOPS[sh]), "Demandé", "Stock", "À acheter", "Acheté", "Reste"]],
+          body: g.map((i) => [pdfTxt(i.name + (cUnit(i) ? " (" + cUnit(i) + ")" : "") + (i.course && i.kind !== "hors" ? " - manque stock" : "")), pdfTxt(fmt(cNeed(i))), pdfTxt(i.stkOk ? fmt(i.stk) : "-"), pdfTxt(fmt(cRest(i))), pdfTxt(i.buyOk ? fmt(i.buy) : "-"), pdfTxt(leftNum(i) > 0 ? fmt(cLeft(i)) : "0")]),
+          styles: { fontSize: 9.5, cellPadding: 4 }, headStyles: { fillColor: [24, 34, 46] }, columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" } },
+          didParseCell: (h) => { if (h.section === "body" && h.column.index === 5) { if (h.cell.raw !== "0") { h.cell.styles.textColor = [179, 38, 30]; h.cell.styles.fontStyle = "bold"; } else h.cell.styles.textColor = [29, 122, 74]; } } });
+        y = doc.lastAutoTable.finalY + 14;
+      }
+      if (y > 720) { doc.addPage(); y = 60; }
+      doc.setFont("helvetica", "bold"); doc.text(pdfTxt(rest.length ? "Reste à acheter :" : "Tout est couvert (stock + achats)."), 40, y + 8); doc.setFont("helvetica", "normal"); y += 22;
+      for (const i of rest) { if (y > 790) { doc.addPage(); y = 60; } doc.text(pdfTxt(`- ${i.name} : ${withUnit(cLeft(i), i)}  (${SHOPS[shopOf(i)]})`), 50, y); y += 14; }
+      offer("Courses_" + safeName(ev.name) + "_" + (ev.date || todayISO()) + ".pdf", doc.output("arraybuffer"));
+    } catch (e) { console.error(e); toast("Le PDF n'a pas pu être généré."); }
+  }
+  function coursesText(ev) {
+    const its = courseItems(ev).filter((i) => leftNum(i) > 0);
+    let t = `*Courses – ${ev.name} – ${fmtDate(ev.date)}*\n`;
+    if (!its.length) return t + "\nTout est couvert (stock + achats).\n";
+    for (const sh of SHOP_ORDER) {
+      const g = its.filter((i) => shopOf(i) === sh); if (!g.length) continue;
+      t += `\n*${SHOPS[sh]}*\n` + g.map((i) => `* ${i.name} : ${withUnit(cLeft(i), i)}${cStk(i) > 0 ? ` (${fmt(cStk(i))} pris au stock)` : ""}`).join("\n") + "\n";
+    }
+    return t;
+  }
   async function buildExport(ev) {
     let wb, rows = {};
     if (ev.buf) { wb = new ExcelJS.Workbook(); await wb.xlsx.load(ev.buf.slice(0)); ev.items.forEach((i) => { if (i.row) rows[i.id] = i.row; }); }
@@ -628,6 +757,8 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       if (/Manque|manque|Indisponible|confirmer|Pas de réponse|rifier/.test(st)) r.getCell(9).font = { bold: true, color: { argb: "FFB3261E" } };
     }
     su.views = [{ state: "frozen", ySplit: 1 }];
+    const oc = wb.getWorksheet(COURSES); if (oc) wb.removeWorksheet(oc.id);
+    addCoursesSheet(wb, ev);
     return wb.xlsx.writeBuffer();
   }
   const safeName = (s) => String(s || "evenement").normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^\w-]+/g, "_").replace(/^_+|_+$/g, "");
@@ -652,7 +783,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     $("#shareX").onclick = () => (bar.hidden = true);
   }
   const DOC = { demande: "Demande", reponse: "Manques", retrait: "Bon_de_sortie", precheck: "Pre-check", retour: "Bon_de_retour" };
-  const fname = (ev, step, ext) => DOC[step] + "_" + safeName(ev.name) + "_" + (ev.date || todayISO()) + "." + ext;
+  const fname = (ev, step, ext) => (DOC[step] || "Evenement") + "_" + safeName(ev.name) + "_" + (ev.date || todayISO()) + "." + ext;
   async function exportXlsx(ev, step) { try { await offer(fname(ev, step, "xlsx"), await buildExport(ev)); } catch (e) { console.error(e); toast("L'Excel n'a pas pu être généré."); } }
   const pdfTxt = (s) => String(s ?? "").replace(/œ/g, "oe").replace(/Œ/g, "OE").replace(/[−–—]/g, "-").replace(/’/g, "'").replace(/[^\x00-\xFF]/g, "");
   function exportPdf(ev, step) {
@@ -738,7 +869,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
         <button class="evcard" type="button" data-open="${ev.id}">
           <div class="t"><h2>${esc(ev.name)}</h2><span class="d">${esc(fmtDate(ev.date))}</span></div>
           <div class="f">${ev.commande ? "N° " + esc(ev.commande) + " · " : ""}${ev.items.filter(inReq).length} articles demandés</div>
-          ${miniSteps(ev)}<span class="next">Continuer : ${s.n}. ${s.title} →</span>
+          ${miniSteps(ev)}${courseItems(ev).length ? `<div class="f" style="margin-top:-2px">Courses : ${courseItems(ev).filter((i) => leftNum(i) > 0).length} à acheter sur ${courseItems(ev).length}</div>` : ""}<span class="next">Continuer : ${s.n}. ${s.title} →</span>
         </button>`; }).join("")}</div>`
       : `<p class="section-lbl">Le déroulé, du bureau au retour au stock</p>
          <div class="flow"><div><i>1</i><b>Demande</b>ton Excel USNE</div><div><i>2</i><b>Réponse</b>le PDF du stock : dispo, tbc</div><div><i>3</i><b>Retrait</b>check au stock + dernière minute</div><div><i>4</i><b>Pré-check</b>seul, sur le lieu, avant de ranger</div><div><i>5</i><b>Retour</b>check avec le responsable du stock</div></div>`}
@@ -802,8 +933,87 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     }
     return "";
   }
+  function evHeaderTop(ev) {
+    const toBuy = courseItems(ev).filter((i) => leftNum(i) > 0).length;
+    return `<header class="appbar"><div class="wrap">
+        <div class="appbar-row"><button class="back" type="button" data-act="home" aria-label="Retour aux événements">${ICON.back}</button>
+          <div class="ev-title"><h1>${esc(ev.name)}</h1><p>${esc(fmtDate(ev.date, true))}${ev.commande ? " · N° " + esc(ev.commande) : ""}</p></div>
+          <button class="iconbtn" type="button" data-act="files" aria-label="Importer, exporter">${ICON.files}</button></div>
+        <div class="modes" role="group" aria-label="Partie"><button type="button" data-mode="materiel" aria-pressed="${view.mode !== "courses"}">Matériel</button><button type="button" data-mode="courses" aria-pressed="${view.mode === "courses"}">Courses${toBuy ? `<span class="n">${toBuy}</span>` : ""}</button></div>`;
+  }
+  function renderCourses(ev) {
+    const step = CSTEPS.some((s) => s.k === view.step) ? view.step : (view.step = cCurrent(ev));
+    const S = CSTEPS.find((s) => s.k === step);
+    const all = cItemsFor(ev, step);
+    const st = (i) => cStatus(step, i);
+    const FILTERS = step === "cbilan" ? [["issues", "Reste à acheter"], ["done", "Complet"], ["all", "Tout"]] : [["todo", "À faire"], ...(step === "cachat" ? [["issues", "Reste"]] : []), ["done", "Fait"], ["all", "Tout"]];
+    const counts = { todo: all.filter((i) => st(i) === "todo").length, issues: all.filter((i) => st(i) === "diff").length, done: all.filter((i) => st(i) !== "todo" && (step !== "cbilan" || st(i) === "done")).length, all: all.length };
+    if (!FILTERS.some(([k]) => k === ui.filter) || (ui.filter === "todo" && !counts.todo)) ui.filter = step === "cbilan" ? "all" : counts.todo ? "todo" : "all";
+    const q = norm(ui.query);
+    const shown = all.filter((i) => !q || norm(i.name + " " + (i.rem || "")).includes(q))
+      .filter((i) => ui.filter === "all" || (ui.filter === "todo" && st(i) === "todo") || (ui.filter === "issues" && st(i) === "diff") || (ui.filter === "done" && st(i) !== "todo" && (step !== "cbilan" || st(i) === "done")));
+    const byShop = step !== "cstock";
+    const keyOf = (i) => (byShop ? shopOf(i) : i.course && i.kind !== "hors" ? "~manque" : "~food");
+    const keys = [...new Set(shown.map(keyOf))].sort((a, b) => (byShop ? SHOP_ORDER.indexOf(a) - SHOP_ORDER.indexOf(b) : a.localeCompare(b)));
+    const row = (it) => {
+      const sm = it.course && it.kind !== "hors" ? chip({ label: "Manque stock", cls: "bad" }) : "";
+      if (step === "cstock") {
+        const on = !!it.stkOk, sv = shown_(it, "stk"), rest = cRestWith(it, sv);
+        const info = isNum(sv) && toNum(sv) > 0 ? (isNum(rest) && rest === 0 ? chip({ label: "Tout au stock", cls: "good" }) : chip({ label: "À acheter " + withUnit(rest, it), cls: "warn" })) : on ? chip({ label: "À acheter " + withUnit(rest, it), cls: "warn" }) : "";
+        return `<div class="item${on ? " done" : ""}"><button type="button" class="tick" role="checkbox" aria-checked="${on}" data-tick="${it.id}" aria-label="Vérifié au stock : ${esc(it.name)}">${ICON.check}</button>
+          <div><div class="name">${esc(it.name)}</div><div class="meta"><span>Demandé <span class="q">${esc(withUnit(cNeed(it), it))}</span></span>${sm}${info}</div></div>
+          <div class="side"><span class="meta" style="margin:0">Pris au stock</span>${stepper(it.id, "stk", sv, true)}</div></div>`;
+      }
+      if (step === "cachat") {
+        const on = !!it.buyOk, sv = shown_(it, "buy"), x = cRest(it);
+        const shopBtn = `<button type="button" class="chip shopchip" data-shop="${it.id}" aria-label="Magasin : ${esc(SHOPS[shopOf(it)])}, toucher pour changer">${esc(SHOPS[shopOf(it)])}</button>`;
+        const stc = on ? (leftNum(it) > 0 ? chip({ label: "Reste " + withUnit(cLeft(it), it), cls: "bad" }) : "") : liveDiff(sv, x);
+        return `<div class="item${on ? (leftNum(it) > 0 ? " alert" : " done") : ""}"><button type="button" class="tick" role="checkbox" aria-checked="${on}" data-tick="${it.id}" aria-label="Acheté : ${esc(it.name)}">${ICON.check}</button>
+          <div><div class="name">${esc(it.name)}</div><div class="meta"><span>À acheter <span class="q">${esc(withUnit(x, it))}</span></span>${cStk(it) > 0 ? `<span>Stock <span class="q">${esc(fmt(cStk(it)))}</span></span>` : ""}${shopBtn}${sm}${stc}</div></div>
+          <div class="side">${stepper(it.id, "buy", sv)}</div></div>`;
+      }
+      const l = leftNum(it);
+      return `<div class="item nt${l > 0 ? " alert" : " done"}"><div><div class="name">${esc(it.name)}</div><div class="meta"><span>Demandé <span class="q">${esc(withUnit(cNeed(it), it))}</span></span><span>Stock <span class="q">${it.stkOk ? esc(fmt(it.stk)) : "–"}</span></span><span>Acheté <span class="q">${it.buyOk ? esc(fmt(it.buy)) : "–"}</span></span>${sm}</div></div>
+        ${chip(l > 0 ? { label: "Reste " + withUnit(cLeft(it), it), cls: "bad" } : { label: cEtat(it), cls: "good" })}</div>`;
+    };
+    const groups = keys.map((k) => {
+      const its = shown.filter((i) => keyOf(i) === k);
+      const todoIds = step !== "cbilan" ? its.filter((i) => st(i) === "todo").map((i) => i.id) : [];
+      const label = k === "~food" ? "Alimentaire" : k === "~manque" ? "Manques du stock" : SHOPS[k];
+      return `<section class="group"><div class="ghead"><span class="code">${byShop ? "•" : "•"}</span><h2>${esc(label)}</h2><span class="cnt">${its.length}</span>${todoIds.length > 1 && step === "cachat" ? `<button type="button" class="link" data-all="${todoIds.join(",")}">Tout acheté</button>` : ""}</div><div class="list">${its.map(row).join("")}</div></section>`;
+    }).join("");
+    const ci = courseItems(ev);
+    const tiles = step === "cstock"
+      ? [["", ci.length, "Articles"], ["g", ci.filter((i) => i.stkOk).length, "Vérifiés"], ["g", ci.filter((i) => cStk(i) > 0).length, "Pris au stock"], ["w", ci.filter(needBuy).length, "À acheter"]]
+      : step === "cachat"
+      ? [["w", ci.filter(needBuy).length, "À acheter"], ["g", ci.filter((i) => i.buyOk).length, "Achetés"], ["r", ci.filter((i) => i.buyOk && leftNum(i) > 0).length, "Pas trouvé"], ["", ci.filter((i) => needBuy(i) && !i.buyOk).length, "Restants"]]
+      : [["", ci.length, "Articles"], ["g", ci.filter((i) => cStk(i) > 0).length, "Du stock"], ["g", ci.filter((i) => i.buyOk).length, "Achetés"], ["r", ci.filter((i) => leftNum(i) > 0).length, "Reste"]];
+    const manques = ev.items.filter((i) => isStock(i) && i.kind === "conso" && i.inReq && !i.course && ["zero", "part"].includes(repState(ev, i).k));
+    const summary = `<div class="summary">${tiles.map(([c, v, l]) => `<div class="${c}"><b>${v}</b><span>${l}</span></div>`).join("")}</div>
+      ${step === "cstock" && manques.length ? `<div class="box warn"><b>${manques.length} consommable${manques.length > 1 ? "s" : ""} manque${manques.length > 1 ? "nt" : ""} au stock</b>${esc(manques.map((i) => i.name).join(", "))}.<div class="row"><button class="btn" type="button" data-act="cmanques">Ajouter aux courses</button></div></div>` : ""}
+      ${step === "cbilan" ? `<div class="box info"><b>Compte rendu</b>PDF et Excel avec, pour chaque article, ce qui vient du stock, ce qui a été acheté et ce qui reste.<div class="row"><button class="btn" type="button" data-act="cpdf">PDF</button><button class="btn" type="button" data-act="cxlsx">Excel</button><button class="btn" type="button" data-act="ccopy">Copier le reste</button></div></div>` : ""}`;
+    const empty = !ci.length ? `<div class="list"><div class="empty"><strong>Aucun article de courses.</strong>Les articles de type « Hors stock » de ta demande arrivent ici (onglet AUTRE : chips, menthe, poulet…). Tu peux aussi en ajouter.<button class="btn dark" type="button" data-act="cadd">+ Ajouter un article</button></div></div>`
+      : step === "cachat" && !all.length ? `<div class="list"><div class="empty"><strong>Rien à acheter.</strong>Tout a été trouvé au stock.</div></div>` : "";
+    const next = CSTEPS[S.n];
+    const left = step === "cstock" ? `<button class="btn" type="button" data-act="cadd">+ Ajouter</button>` : step === "cachat" ? `<button class="btn" type="button" data-act="ccopy">Copier</button>` : `<button class="btn" type="button" data-act="cxlsx">Excel</button>`;
+    const right = next ? `<button class="btn dark" type="button" data-goto="${next.k}">${next.title} →</button>` : `<button class="btn primary" type="button" data-act="cpdf">Compte rendu PDF</button>`;
+    return `${evHeaderTop(ev)}
+        <nav class="steps c3" aria-label="Étapes des courses">${CSTEPS.map((s) => { const c = cCount(ev, s.k); const done = c.total && c.done === c.total; const p = c.total ? Math.round((c.done / c.total) * 100) : 0; return `<button type="button" class="step${done ? " done" : ""}" data-goto="${s.k}" ${s.k === step ? 'aria-current="step"' : ""}><span class="top"><span class="lbl">${s.title}</span></span><span class="cnt">${done ? '<span class="ok" aria-label="terminé">✓</span> ' : ""}${c.done}/${c.total}${c.issues ? ` <span class="x">●${c.issues}</span>` : ""}</span><span class="bar"><i style="width:${p}%"></i></span></button>`; }).join("")}</nav>
+      </div></header>
+      <main class="wrap">
+        <p class="intro"><strong>${S.n}. ${S.title}.</strong> ${S.help}</p>
+        ${ci.length ? summary : ""}
+        ${empty || `<div class="tools"><input class="search" id="search" type="search" placeholder="Chercher un article" value="${esc(ui.query)}" autocomplete="off">
+          <div class="chips" role="group" aria-label="Filtre">${FILTERS.map(([k, l]) => `<button type="button" data-filter="${k}" aria-pressed="${ui.filter === k}">${l}<span class="n">${counts[k]}</span></button>`).join("")}</div></div>
+        ${groups || `<div class="list"><div class="empty">${ui.filter === "todo" ? "Tout est fait pour cette étape." : "Rien à afficher."}</div></div>`}`}
+      </main>
+      <div class="actionbar"><div class="wrap">${left}${right}</div></div>`;
+  }
+  const shown_ = (it, f) => shown(it, f);
   function renderEvent() {
     const ev = getEv(); if (!ev) { view = { name: "home" }; return renderHome(); }
+    if (view.mode === "courses") return renderCourses(ev);
+    if (!STEPS.some((s) => s.k === view.step)) view.step = currentStep(ev);
     const step = view.step, S = STEPS.find((s) => s.k === step);
     const all = stepItems(ev, step);
     const st = (i) => itemStatus(ev, step, i).k;
@@ -831,10 +1041,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     const next = STEPS[S.n];
     const left = step === "demande" || step === "retrait" ? `<button class="btn" type="button" data-act="add">+ Ajouter</button>` : step === "reponse" ? `<button class="btn" type="button" data-act="import">Importer</button>` : "";
     const right = next ? `<button class="btn dark" type="button" data-goto="${next.k}">${next.title} →</button>` : `<button class="btn primary" type="button" data-act="files">Bon de retour (Excel / PDF)</button>`;
-    return `<header class="appbar"><div class="wrap">
-        <div class="appbar-row"><button class="back" type="button" data-act="home" aria-label="Retour aux événements">${ICON.back}</button>
-          <div class="ev-title"><h1>${esc(ev.name)}</h1><p>${esc(fmtDate(ev.date, true))}${ev.commande ? " · N° " + esc(ev.commande) : ""}</p></div>
-          <button class="iconbtn" type="button" data-act="files" aria-label="Importer, exporter">${ICON.files}</button></div>
+    return `${evHeaderTop(ev)}
         <nav class="steps" aria-label="Étapes">${STEPS.map((s) => { const c = stepCount(ev, s.k); const done = c.total && (s.k === "demande" || c.done === c.total) && !c.issues; return `<button type="button" class="step${done ? " done" : ""}" data-goto="${s.k}" ${s.k === step ? 'aria-current="step"' : ""}><span class="top"><span class="lbl">${s.title}</span></span><span class="cnt">${done ? '<span class="ok" aria-label="terminé">✓</span> ' : ""}${s.k === "demande" ? c.total + (done ? "" : " art.") : c.done + "/" + c.total}${c.issues ? ` <span class="x" aria-label="${c.issues} points à vérifier">●${c.issues}</span>` : ""}</span><span class="bar"><i style="width:${pct(s.k, c)}%"></i></span></button>`; }).join("")}</nav>
       </div></header>
       <main class="wrap">
@@ -875,6 +1082,29 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
           <div class="field"><label for="a-rem">Remarque</label><input id="a-rem" placeholder="facultatif" autocomplete="off"></div></div>
           <button class="btn primary block" type="submit">Ajouter</button>
           <button class="btn ghost block" type="button" data-act="close">Fermer</button></form>`;
+    } else if (s === "cadd") {
+      body = `<h2>Ajouter aux courses</h2><p>Un article alimentaire ou à acheter qui n'est pas dans la demande.</p>
+        <form id="caddForm" class="sheet-actions" style="gap:12px"><div class="fields">
+          <div class="field wide"><label for="c-name">Article</label><input id="c-name" required placeholder="ex. Dattes" autocomplete="off"></div>
+          <div class="field"><label for="c-qty">Quantité</label><input id="c-qty" inputmode="decimal" placeholder="ex. 2"></div>
+          <div class="field"><label for="c-unit">Unité</label><input id="c-unit" placeholder="ex. kg, boîte" autocomplete="off"></div>
+          <div class="field wide"><label for="c-shop">Magasin</label><select id="c-shop"><option value="">Deviner automatiquement</option>${SHOP_ORDER.map((k) => `<option value="${k}">${esc(SHOPS[k])}</option>`).join("")}</select></div></div>
+          <button class="btn primary block" type="submit">Ajouter</button>
+          <button class="btn ghost block" type="button" data-act="close">Fermer</button></form>`;
+    } else if (s === "files" && view.mode === "courses") {
+      const ev = getEv();
+      body = `<h2>Fichiers · Courses</h2>
+        <h3>Exporter</h3>
+        <div class="menu">
+          <button type="button" data-act="cpdf"><b>PDF : compte rendu des courses</b><span>Stock, achats et reste à acheter, par magasin</span></button>
+          <button type="button" data-act="cxlsx"><b>Excel : courses</b><span>Un onglet « Courses » (aussi inclus dans l'Excel USNE)</span></button>
+          <button type="button" data-act="ccopy"><b>Copier la liste d'achats</b><span>Ce qui reste à acheter, par magasin, prêt pour WhatsApp</span></button>
+          <button type="button" data-act="xlsx"><b>Excel complet au format USNE</b><span>Matériel + courses, pour sauvegarder ou passer le relais</span></button>
+        </div>
+        <h3>Importer</h3>
+        <div class="menu"><button type="button" data-act="import"><b>Importer un fichier</b><span>Un Excel exporté par l'app : matériel et courses se mettent à jour</span></button></div>
+        <div class="menu"><button type="button" class="danger" data-act="delete"><b>${ui.confirmDelete ? "Confirmer la suppression de « " + esc(ev.name) + " »" : "Supprimer l'événement"}</b><span>${ui.confirmDelete ? "Touche encore pour supprimer définitivement" : "Pense à exporter l'Excel avant"}</span></button></div>
+        <button class="btn ghost block" type="button" data-act="close">Fermer</button>`;
     } else if (s === "files") {
       const ev = getEv(); const step = view.step;
       const LBL = { demande: ["la demande", "liste à envoyer au stock"], reponse: ["les manques", "points à régler avec le stock"], retrait: ["le bon de sortie", "à faire signer au retrait"], precheck: ["le pré-check", "ce qui manque avant de rentrer"], retour: ["le bon de retour", "à faire signer au retour"] }[step];
@@ -906,19 +1136,21 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     if (e.target.matches("[data-scrim]")) return closeSheet();
     const t = e.target.closest("button"); if (!t) return;
     const d = t.dataset;
-    if (d.open) { const ev = events.find((x) => x.id === d.open); return go({ name: "event", id: ev.id, step: currentStep(ev) }); }
+    if (d.open) { const ev = events.find((x) => x.id === d.open); return go({ name: "event", id: ev.id, mode: "materiel", step: currentStep(ev) }); }
+    if (d.mode) { const ev = getEv(); view.mode = d.mode; view.step = d.mode === "courses" ? cCurrent(ev) : currentStep(ev); ui.filter = ""; ui.query = ""; render(); return window.scrollTo(0, 0); }
+    if (d.shop) { const it = byId(d.shop); const i = SHOP_ORDER.indexOf(shopOf(it)); it.shop = SHOP_ORDER[(i + 1) % SHOP_ORDER.length]; return changed(); }
     if (d.goto) { view.step = d.goto; ui.filter = ""; ui.query = ""; ui.sheet = null; render(); return window.scrollTo(0, 0); }
     if (d.filter) { ui.filter = d.filter; return render(); }
     if (d.kind) { const it = byId(d.kind); it.kind = KIND_NEXT[it.kind]; setKindPref(it); return changed(); }
     if (d.tick) {
       const it = byId(d.tick);
-      const f = view.step === "retrait" ? "out" : view.step === "precheck" ? "pre" : "in";
+      const f = FIELD[view.step] || "in";
       const ok = f + "Ok";
       if (it[ok]) it[ok] = false;
       else { if (blank(it[f])) it[f] = shown(it, f); it[ok] = true; toast(it.name + " : " + fmt(it[f]) + " ✓"); }
       return changed();
     }
-    if (d.all) { d.all.split(",").forEach((id) => { const it = byId(id); if (!it) return; const f = view.step === "retrait" ? "out" : view.step === "precheck" ? "pre" : "in"; if (blank(it[f])) it[f] = shown(it, f); it[f + "Ok"] = true; }); toast("Groupe coché."); return changed(); }
+    if (d.all) { d.all.split(",").forEach((id) => { const it = byId(id); if (!it) return; const f = FIELD[view.step] || "in"; if (blank(it[f])) it[f] = shown(it, f); it[f + "Ok"] = true; }); toast("Groupe coché."); return changed(); }
     if (d.step) {
       const it = byId(d.id), f = d.field;
       const ref = it.kind === "conso" && (f === "pre" || f === "in") ? (f === "in" ? consoIn(it) : null) : f === "dispo" || f === "voulu" ? null : shown(it, f);
@@ -940,6 +1172,15 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       case "files": return openSheet("files");
       case "import": ui.sheet = null; render(); return pickFile("event");
       case "copy": return copyText(manquesText(getEv()));
+      case "ccopy": return copyText(coursesText(getEv()));
+      case "cpdf": return exportCoursesPdf(getEv());
+      case "cxlsx": return exportCoursesXlsx(getEv());
+      case "cadd": return openSheet("cadd");
+      case "cmanques": {
+        const ev = getEv(); let n = 0;
+        for (const i of ev.items) if (isStock(i) && i.kind === "conso" && i.inReq && !i.course && ["zero", "part"].includes(repState(ev, i).k)) { i.course = true; i.courseQty = repState(ev, i).k === "zero" || !isNum(i.dispo) ? i.voulu : toNum(i.voulu) - toNum(i.dispo); n++; }
+        toast(n + " article" + (n > 1 ? "s" : "") + " ajouté" + (n > 1 ? "s" : "") + " aux courses."); return changed();
+      }
       case "xlsx": return exportXlsx(getEv(), view.step);
       case "pdf": return exportPdf(getEv(), view.step);
       case "delete": {
@@ -982,6 +1223,14 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       } catch (err) { console.error(err); btn.disabled = false; btn.textContent = "Créer l'événement"; toast(err && err.message === "vide" ? "Aucun article trouvé : est-ce bien un fichier USNE ?" : "Impossible de lire ce fichier (Excel .xlsx ou PDF attendu)."); }
       return;
     }
+    if (e.target.id === "caddForm") {
+      const ev = getEv(); const name = $("#c-name").value.trim(); const qv = $("#c-qty").value.trim();
+      if (!name) { toast("Indique l'article."); return; }
+      const qty = qv === "" ? 1 : isNum(qv) ? toNum(qv) : qv;
+      ev.items.push({ id: uid(), sheet: "AUTRE", row: null, name, kind: "hors", voulu: qty, dispo: "", answered: false, out: "", pre: "", in: "", rem: $("#c-unit").value.trim(), extra: false, inReq: true, shop: $("#c-shop").value || undefined });
+      persist(ev, true); toast("Ajouté aux courses : " + name);
+      $("#c-name").value = ""; $("#c-qty").value = ""; $("#c-unit").value = ""; $("#c-name").focus(); render(); return;
+    }
     if (e.target.id === "addForm") {
       const ev = getEv(); const retrait = view.step === "retrait";
       const qv = $("#a-qty").value.trim(); const qty = qv === "" ? 1 : isNum(qv) ? toNum(qv) : qv;
@@ -1000,7 +1249,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
 
   /* ================= démarrage ================= */
   function migrate(ev) {
-    ev.items = (ev.items || []).filter((i) => i.source !== "surplace").map((i) => ({
+    ev.items = (ev.items || []).filter((i) => i.source !== "surplace").map((i) => ({ ...i,
       id: i.id || uid(), sheet: i.sheet, row: i.row || null, name: i.name, kind: i.kind || kindFor(i.sheet, i.name),
       voulu: i.voulu ?? null, dispo: i.dispo ?? "", answered: i.answered ?? !blank(i.dispo), out: i.out ?? "", pre: i.pre ?? "", in: i.conso ? "" : i.in ?? "",
       outOk: i.outOk ?? !blank(i.out), preOk: i.preOk ?? !blank(i.pre), inOk: i.inOk ?? !blank(i.in),

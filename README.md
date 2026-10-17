@@ -30,6 +30,16 @@ Une fois ouverte une première fois, elle marche aussi sans réseau (pratique da
 4. **Pré-check** (seul, sur le lieu, avant de ranger) : compte le matériel à rendre ; un manque s'affiche tout de suite pour le chercher avant de partir. Pour les consommables, note juste le reste à rendre.
 5. **Retour** (au stock, avec le responsable) : la quantité du pré-check est proposée, tu confirmes. Les manques sortent en rouge. PDF *Bon de retour* à signer.
 
+## Courses (bouton « Courses » en haut de l'événement)
+Les articles de type *Hors stock* de la demande (chips, menthe, poulet…), plus ceux que tu ajoutes.
+
+1. **Au stock** : pour chaque article, compte ce que tu trouves et mets de côté (− / +), puis coche. 0 = rien trouvé.
+   Les consommables qui manquent au stock (ex. plateau alu) peuvent être ajoutés aux courses d'un tap.
+2. **Achats** (en magasin) : liste par magasin (Colruyt / Aldi, Épicerie, Boucherie, Albert Heijn, Sofabel, Desserts).
+   Le compteur propose ce qui reste à acheter ; coche ce que tu achètes. Touche le magasin pour le changer.
+3. **Bilan** : pour chaque article, demandé / pris au stock / acheté / reste. Ex. chips : 2 demandées → 1 du stock, 1 achetée.
+   Export **PDF compte rendu**, **Excel « Courses »**, et **Copier** la liste de ce qui reste (WhatsApp).
+
 ## Fichiers (bouton en haut à droite, à toutes les étapes)
 - **Exporter l'Excel** au format USNE d'origine : Quantité, Disponible, check out, check in remplis, ajouts en bas de leur onglet, plus un onglet « Suivi événement ».
 - **PDF** de l'étape : demande, manques, bon de sortie ou bon de retour.
