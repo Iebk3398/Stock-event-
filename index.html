@@ -63,6 +63,7 @@ button { cursor: pointer; }
 .wrap { max-width: 760px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 14px; font-weight: 600; min-height: 46px; text-align: center; }
+.btn svg { width: 20px; height: 20px; flex: none; }
 .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
 .btn.dark { background: var(--ink); color: var(--surface); border-color: transparent; }
 .btn.ghost { background: none; border-color: transparent; }
@@ -174,6 +175,43 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
 .evcard .d { font-family: var(--f-num); font-size: 12.5px; color: var(--muted); white-space: nowrap; }
 .evcard .f { font-size: 12.5px; color: var(--muted); margin-top: -6px; }
 .evcard .next { font-size: 13px; font-weight: 600; color: var(--info); }
+.evwrap { position: relative; }
+.evwrap .evcard { padding-bottom: 14px; }
+.evdel { position: absolute; right: 10px; bottom: 9px; border: 0; background: none; color: var(--muted); font-size: 13px; font-weight: 600; padding: 6px 8px; border-radius: 9px; display: flex; align-items: center; gap: 4px; }
+.evdel svg { width: 16px; height: 16px; }
+.evdel.confirm { background: var(--bad); color: #fff; }
+.eye { border: 1px solid var(--line); background: var(--sunk); color: var(--info); border-radius: 99px; padding: 1px 7px 1px 5px; margin-left: 6px; display: inline-flex; align-items: center; gap: 3px; vertical-align: 1px; font-size: 11.5px; font-weight: 700; font-family: var(--f-num); }
+.eye svg { width: 15px; height: 15px; }
+.photo { position: fixed; inset: 0; z-index: 60; background: #0d1117; color: #e7ecf2; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); }
+.ph-top { display: flex; align-items: center; gap: 8px; padding: 8px max(12px, env(safe-area-inset-right, 0px)) 8px max(12px, env(safe-area-inset-left, 0px)); }
+.ph-top b { flex: 1; text-align: center; font-family: var(--f-display); font-size: 18px; text-transform: uppercase; letter-spacing: .03em; }
+.ph-top button { border: 0; background: rgba(255,255,255,.1); color: #fff; border-radius: 10px; padding: 8px 12px; font-weight: 600; font-size: 14px; }
+.ph-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 max(12px, env(safe-area-inset-right, 0px)) 16px max(12px, env(safe-area-inset-left, 0px)); display: grid; gap: 12px; align-content: start; }
+.ph-stage { position: relative; margin: 0 auto; touch-action: none; user-select: none; -webkit-user-select: none; border-radius: 10px; overflow: hidden; background: #000; max-width: 100%; }
+.ph-stage img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; -webkit-touch-callout: none; }
+.pf { position: absolute; border: 2.5px solid #f2b705; border-radius: 6px; background: rgba(242,183,5,.08); padding: 0; min-width: 18px; min-height: 18px; }
+.pf.ok { border-color: #3ddc84; background: rgba(61,220,132,.10); }
+.pf.sel { box-shadow: 0 0 0 3px #fff; }
+.pf.draw { border-style: dashed; border-color: #fff; background: rgba(255,255,255,.12); pointer-events: none; }
+.pf span { position: absolute; left: -2px; top: -2px; transform: translateY(-100%); max-width: 70vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: #f2b705; color: #231b00; font-size: 11.5px; font-weight: 700; padding: 1px 6px; border-radius: 5px 5px 5px 0; }
+.pf.ok span { background: #3ddc84; color: #08210f; }
+.pf.top span { transform: none; top: 0; border-radius: 0 0 5px 0; }
+.ph-status { margin: 0; font-size: 14px; color: #c3ccd7; }
+.ph-pick { background: #1a212a; border: 1px solid #2c3641; border-radius: 14px; padding: 12px; display: grid; gap: 10px; }
+.ph-pick h3 { margin: 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #9aa7b6; }
+.ph-pick p { margin: 0; font-size: 14px; }
+.ph-pick input { width: 100%; border: 1px solid #2c3641; background: #10151b; color: #e7ecf2; border-radius: 10px; padding: 10px 12px; font-size: 16px; }
+.ph-list { display: grid; gap: 6px; }
+.ph-list button { text-align: left; border: 1px solid #2c3641; background: #10151b; color: #e7ecf2; border-radius: 10px; padding: 10px 12px; display: flex; gap: 8px; align-items: baseline; font-size: 15px; }
+.ph-list button .s { font-family: var(--f-num); font-size: 11px; color: #9aa7b6; flex: none; }
+.ph-list button[aria-pressed="true"] { border-color: #3ddc84; background: #173527; }
+.ph-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.ph-row button { border: 1px solid #2c3641; background: none; color: #e7ecf2; border-radius: 10px; padding: 8px 12px; font-weight: 600; font-size: 14px; }
+.ph-row button.danger { color: #ff8a80; }
+.ph-bar { padding: 10px max(12px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); border-top: 1px solid #2c3641; }
+.ph-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.ph-grid figure { margin: 0; display: grid; gap: 4px; justify-items: center; }
+.ph-grid img { width: 100%; border-radius: 10px; border: 1px solid var(--line); background: var(--sunk); }
 .mini-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
 .mini-steps div { display: grid; gap: 4px; min-width: 0; }
 .mini-steps span { font-size: 11px; letter-spacing: -.01em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -229,6 +267,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
 <div id="app"></div>
 <div class="toast" id="toast" hidden></div>
 <div class="sharebar" id="sharebar" hidden><span></span><button class="btn primary" type="button" id="shareGo">Partager le fichier</button><button class="btn" type="button" id="shareX" aria-label="Fermer">✕</button></div>
+<input type="file" id="photoInput" accept="image/*" hidden>
 <input type="file" id="fileInput" accept=".xlsx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
 
 <script src="lib/exceljs.min.js"></script>
@@ -239,7 +278,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
 (function () {
   "use strict";
   /* ================= référentiel ================= */
-  const APP_VERSION = "12";
+  const APP_VERSION = "13";
   const EXTRA_TAG = "Ajout dernière minute";
   const SUIVI = "Suivi événement";
   const SHEET_LABEL = { UST: "Ustensiles", SPT: "Sport", EMB: "Emballage", NET: "Nettoyage", It: "IT / audio / vidéo", AUTRE: "Mobilier et courses" };
@@ -328,6 +367,9 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
   const FIELD = { retrait: "out", precheck: "pre", retour: "in", cstock: "stk", cachat: "buy" };
 
   const ICON = {
+    eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
     back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
     files: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2"/></svg>',
     check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -860,12 +902,169 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     toast("Copie impossible sur cet appareil.");
   }
 
+  /* ================= photos ================= */
+  // Reconnaissance sur le téléphone (COCO-SSD) : ~80 objets courants. Le reste se lie à la main.
+  const COCO_FR = {
+    knife: ["couteau", "couteau"], fork: ["fourchette", "fourchette"], spoon: ["cuillère", "cuill|louche|ecumoire|spatule"],
+    bowl: ["bol", "bol|saladier|soupiere|bassine|coupe|ramequin|plat"], cup: ["tasse / verre", "verre|tasse|gobelet|verrine|thermos"],
+    "wine glass": ["verre", "verre|carafe"], bottle: ["bouteille", "bouteille|eau|thermos|bonbonne|huile|carafe"],
+    "dining table": ["table", "table"], chair: ["chaise", "chaise"], bench: ["banc", "banc"], scissors: ["ciseaux", "ciseaux"],
+    oven: ["four", "four|rechaud|plaque"], microwave: ["micro-ondes", "micro"], refrigerator: ["frigo", "frigo|glaciere"],
+    toaster: ["grille-pain", "grille|toaster|gaufrier"], sink: ["évier", "evier|bassine"], tv: ["écran", "ecran|toile|projecteur"],
+    laptop: ["ordinateur", "ordinateur|pc|laptop"], "cell phone": ["téléphone", "telephone|gsm"], remote: ["télécommande", "telecommande"],
+    keyboard: ["clavier", "clavier|table de mixage"], mouse: ["souris", "souris"], vase: ["vase", "vase|carafe"],
+    "sports ball": ["ballon", "ballon|balle"], suitcase: ["valise", "valise|sac|caisse"], backpack: ["sac", "sac"], handbag: ["sac", "sac"],
+    cake: ["gâteau", "gateau|tiramisu"], clock: ["horloge", "horloge"], book: ["livre", "livre"], "potted plant": ["plante", "plante"], umbrella: ["parasol", "parasol"],
+  };
+  let detectorP = null, photoCanvas = null, pendingPhoto = null, drawStart = null;
+  function loadScript(src) { return new Promise((res, rej) => { const el = document.createElement("script"); el.src = src; el.onload = res; el.onerror = () => rej(new Error("script " + src)); document.head.appendChild(el); }); }
+  function loadDetector() {
+    if (!detectorP) detectorP = (async () => {
+      if (!window.tf) await loadScript("lib/tf.min.js");
+      if (!window.cocoSsd) await loadScript("lib/coco-ssd.min.js");
+      return window.cocoSsd.load({ base: "lite_mobilenet_v2" });
+    })().catch((e) => { detectorP = null; throw e; });
+    return detectorP;
+  }
+  const photoItems = (ev) => ev.items.filter((i) => i.inReq || taken(i));
+  const allItems = (ev) => ev.items;
+  function trig(t) { const x = "  " + norm(t) + " "; const g = new Set(); for (let i = 0; i < x.length - 2; i++) g.add(x.slice(i, i + 3)); return g; }
+  function simil(a, b) { const A = trig(a), B = trig(b); let n = 0; A.forEach((g) => { if (B.has(g)) n++; }); return n / Math.max(1, Math.min(A.size, B.size)); }
+  // Articles du template (même non demandés) qui ressemblent au libellé : « peut-être ».
+  function maybeFor(ev, label, exclude) { return allItems(ev).filter((i) => !exclude.has(i.id)).map((i) => ({ i, s: simil(label, i.name) })).filter((x) => x.s >= 0.34).sort((a, b) => b.s - a.s).slice(0, 6).map((x) => x.i); }
+  const COCO_SHEET = { tv: "It", laptop: "It", keyboard: "It", mouse: "It", remote: "It", "cell phone": "It", chair: "AUTRE", "dining table": "AUTRE", bench: "AUTRE", "sports ball": "SPT", cake: "AUTRE" };
+  function candidatesFor(ev, cls) { const m = COCO_FR[cls]; if (!m) return []; const re = new RegExp(m[1]); return photoItems(ev).filter((i) => re.test(norm(i.name))); }
+  async function fileToCanvas(file, max) {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error("image")); im.src = url; });
+      const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); return c;
+    } finally { URL.revokeObjectURL(url); }
+  }
+  function cropToDataUrl(src, x, y, w, h, max) {
+    const k = Math.min(1, max / Math.max(w, h)); const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
+    c.getContext("2d").drawImage(src, x, y, w, h, 0, 0, c.width, c.height); return c.toDataURL("image/jpeg", 0.78);
+  }
+  async function startScan(file) {
+    try {
+      const c = await fileToCanvas(file, 1600); photoCanvas = c;
+      const blob = await new Promise((res) => c.toBlob(res, "image/jpeg", 0.85));
+      if (ui.photo && ui.photo.src) URL.revokeObjectURL(ui.photo.src);
+      ui.photo = { src: URL.createObjectURL(blob), w: c.width, h: c.height, frames: [], sel: null, q: "", status: "detect" };
+      ui.sheet = null; render();
+      try {
+        const det = await loadDetector();
+        const preds = await det.detect(c, 20, 0.3);
+        const ev = getEv(); const used = new Set();
+        for (const pr of preds) {
+          if (pr.class === "person") continue;
+          const [x, y, w, h] = pr.bbox; const cands = candidatesFor(ev, pr.class);
+          const free = cands.filter((i) => !used.has(i.id));
+          const sure = pr.score >= 0.6 && cands.length === 1 && free.length === 1;
+          if (sure) used.add(free[0].id);
+          ui.photo.frames.push({ id: uid(), x, y, w, h, cls: pr.class, label: COCO_FR[pr.class] ? COCO_FR[pr.class][0] : pr.class, score: pr.score, itemId: sure ? free[0].id : null, cand: cands.map((i) => i.id) });
+        }
+        ui.photo.status = "done";
+      } catch (e) { console.warn(e); if (ui.photo) ui.photo.status = "nomodel"; }
+      if (ui.photo) render();
+    } catch (e) { console.error(e); toast("Impossible d'ouvrir cette photo."); }
+  }
+  async function addItemPhoto(it, file) {
+    try { const c = await fileToCanvas(file, 640); it.photos = [...(it.photos || []), c.toDataURL("image/jpeg", 0.78)].slice(-6); persist(getEv(), true); toast("Photo ajoutée : " + it.name); render(); }
+    catch (e) { toast("Impossible d'ouvrir cette photo."); }
+  }
+  function savePhotoFrames() {
+    const P = ui.photo, ev = getEv(); let n = 0;
+    for (const f of P.frames) {
+      const it = f.itemId && ev.items.find((i) => i.id === f.itemId); if (!it) continue;
+      const pad = 0.06; const x = Math.max(0, f.x - f.w * pad), y = Math.max(0, f.y - f.h * pad);
+      const w = Math.min(P.w - x, f.w * (1 + 2 * pad)), h = Math.min(P.h - y, f.h * (1 + 2 * pad));
+      it.photos = [...(it.photos || []), cropToDataUrl(photoCanvas, x, y, w, h, 480)].slice(-6); n++;
+    }
+    persist(ev, true); closePhoto(); toast(n ? `${n} photo${n > 1 ? "s" : ""} enregistrée${n > 1 ? "s" : ""}. Touche l'œil à côté d'un article pour la voir.` : "Aucun cadre lié : rien n'a été enregistré.");
+  }
+  function closePhoto() { if (ui.photo && ui.photo.src) URL.revokeObjectURL(ui.photo.src); ui.photo = null; photoCanvas = null; render(); }
+  function renderPhoto() {
+    const P = ui.photo, ev = getEv(); if (!ev) return "";
+    const itemOf = (f) => f.itemId && ev.items.find((i) => i.id === f.itemId);
+    const linked = P.frames.filter(itemOf).length;
+    const frames = P.frames.map((f) => { const it = itemOf(f); return `<button type="button" class="pf${it ? " ok" : ""}${P.sel === f.id ? " sel" : ""}${f.y / P.h < 0.06 ? " top" : ""}" data-frame="${f.id}" style="left:${(f.x / P.w) * 100}%;top:${(f.y / P.h) * 100}%;width:${(f.w / P.w) * 100}%;height:${(f.h / P.h) * 100}%" aria-label="${esc(it ? it.name : "Objet à identifier")}"><span>${esc(it ? it.name : "? " + (f.label || "à lier"))}</span></button>`; }).join("");
+    const unl = P.frames.length - linked;
+    const status = P.status === "detect" ? "Reconnaissance des objets… (la 1re fois, il faut du réseau pour télécharger le modèle)"
+      : P.status === "nomodel" ? "Reconnaissance indisponible (pas de réseau la 1re fois ?). Glisse le doigt sur la photo pour encadrer chaque article, puis choisis-le."
+      : !P.frames.length ? "Aucun objet reconnu. Glisse le doigt sur la photo pour encadrer un article (ex. un couteau à dents), puis choisis-le dans la liste."
+      : `${P.frames.length} cadre${P.frames.length > 1 ? "s" : ""} · ${linked} lié${linked > 1 ? "s" : ""}${unl ? ` · ${unl} à identifier (en jaune)` : ""}. Touche un cadre pour le lier, ou glisse le doigt pour en ajouter un.`;
+    const sel = P.frames.find((f) => f.id === P.sel);
+    let pick = "";
+    if (sel) {
+      const q = norm(P.q);
+      const cands = sel.cand.map((id) => ev.items.find((i) => i.id === id)).filter(Boolean);
+      const list = q ? allItems(ev).filter((i) => norm(i.name + " " + i.sheet).includes(q)).sort((a, b) => (b.inReq ? 1 : 0) - (a.inReq ? 1 : 0)).slice(0, 12) : cands;
+      const cur = itemOf(sel);
+      const maybe = !q && !cands.length && sel.cls ? maybeFor(ev, sel.label, new Set()) : [];
+      const newName = P.q.trim() || (sel.cls ? sel.label.charAt(0).toUpperCase() + sel.label.slice(1) : "");
+      const sheets = [...new Set([...SHEET_ORDER, ...ev.items.map((i) => i.sheet)])];
+      const defSheet = (sel.cls && COCO_SHEET[sel.cls]) || "UST";
+      pick = `<div class="ph-pick" id="phPick">
+        <h3>Ce cadre</h3>
+        <p>${sel.cls ? `Reconnu comme « ${esc(sel.label)} » (${Math.round(sel.score * 100)} %)` : "Cadre ajouté à la main"}${cur ? ` → lié à <b>${esc(cur.name)}</b>` : " → pas encore lié"}</p>
+        ${!q && cands.length ? `<h3>Suggestions</h3>` : ""}
+        <input id="phq" type="search" placeholder="Chercher l'article (ex. couteau à dent)" value="${esc(P.q)}" autocomplete="off">
+        <div class="ph-list">${list.map((i) => `<button type="button" data-link="${i.id}" aria-pressed="${cur && cur.id === i.id}"><span class="s">${esc(i.sheet)}</span>${esc(i.name)}${i.inReq ? "" : ` <span class="s">(pas demandé)</span>`}</button>`).join("") || (maybe.length ? "" : `<p style="color:#9aa7b6">${q ? "Aucun article ne correspond dans ta liste." : "Pas dans ta liste. Cherche l'article ci-dessus, ou ajoute-le."}</p>`)}</div>
+        ${maybe.length ? `<h3>Peut-être (à valider)</h3><div class="ph-list">${maybe.map((i) => `<button type="button" data-link="${i.id}"><span class="s">${esc(i.sheet)}</span>${esc(i.name)}${i.inReq ? "" : ` <span class="s">(pas demandé)</span>`}</button>`).join("")}</div>` : ""}
+        ${newName && (!list.length || q) ? `<h3>Pas dans la liste ?</h3><div class="ph-row" style="align-items:center"><select id="phsheet" aria-label="Onglet" style="border:1px solid #2c3641;background:#10151b;color:#e7ecf2;border-radius:10px;padding:8px;font-size:15px">${sheets.map((x) => `<option value="${esc(x)}"${x === defSheet ? " selected" : ""}>${esc(x)}</option>`).join("")}</select><button type="button" data-act="phadd" data-name="${esc(newName)}">+ Ajouter « ${esc(newName)} » à la liste</button></div>` : ""}
+        <div class="ph-row">${cur ? `<button type="button" data-act="phunlink">Retirer le lien</button>` : ""}<button type="button" class="danger" data-act="phdelframe">Supprimer le cadre</button></div>
+      </div>`;
+    }
+    const wcss = `width:min(100%, calc(60vh * ${(P.w / P.h).toFixed(4)}))`;
+    return `<div class="photo" role="dialog" aria-modal="true" aria-label="Repérer les articles sur la photo">
+      <div class="ph-top"><button type="button" data-act="phclose">Fermer</button><b>Photo</b><button type="button" data-act="phretake">Autre photo</button></div>
+      <div class="ph-scroll">
+        <div class="ph-stage" id="phStage" style="aspect-ratio:${P.w}/${P.h};${wcss}"><img src="${P.src}" alt="Photo prise" draggable="false">${frames}<div class="pf draw" id="phDraw" hidden></div></div>
+        <p class="ph-status">${esc(status)}</p>
+        ${pick}
+      </div>
+      <div class="ph-bar"><button type="button" class="btn primary block" data-act="phsave" ${linked ? "" : "disabled"}>Enregistrer ${linked} photo${linked > 1 ? "s" : ""}</button></div>
+    </div>`;
+  }
+  // Dessiner un cadre : glisser le doigt sur la photo.
+  function stagePoint(e) { const st = $("#phStage"); const r = st.getBoundingClientRect(); return { x: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), y: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)) }; }
+  document.addEventListener("pointerdown", (e) => {
+    if (!ui.photo || !e.target.closest("#phStage") || e.target.closest(".pf")) return;
+    drawStart = stagePoint(e); try { $("#phStage").setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  document.addEventListener("pointermove", (e) => {
+    if (!drawStart || !ui.photo) return;
+    const p = stagePoint(e), d = $("#phDraw"); if (!d) return;
+    d.hidden = false; d.style.left = Math.min(p.x, drawStart.x) * 100 + "%"; d.style.top = Math.min(p.y, drawStart.y) * 100 + "%";
+    d.style.width = Math.abs(p.x - drawStart.x) * 100 + "%"; d.style.height = Math.abs(p.y - drawStart.y) * 100 + "%";
+  });
+  document.addEventListener("pointerup", (e) => {
+    if (!drawStart || !ui.photo) return;
+    const a = drawStart, b = stagePoint(e); drawStart = null; const P = ui.photo;
+    const w = Math.abs(b.x - a.x), h = Math.abs(b.y - a.y);
+    if (w < 0.03 || h < 0.03) { P.sel = null; return render(); }
+    const f = { id: uid(), x: Math.min(a.x, b.x) * P.w, y: Math.min(a.y, b.y) * P.h, w: w * P.w, h: h * P.h, cls: null, label: "à lier", score: 0, itemId: null, cand: [] };
+    P.frames.push(f); P.sel = f.id; P.q = ""; render();
+    const pk = $("#phPick"); if (pk) pk.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+  document.addEventListener("pointercancel", () => { drawStart = null; const d = $("#phDraw"); if (d) d.hidden = true; });
+  $("#photoInput").addEventListener("change", (e) => {
+    const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+    if (pendingPhoto && pendingPhoto.item) { const it = getEv().items.find((i) => i.id === pendingPhoto.item); pendingPhoto = null; if (it) addItemPhoto(it, f); return; }
+    pendingPhoto = null; startScan(f);
+  });
+
   /* ================= rendu ================= */
   const app = $("#app");
   function render() {
     const a = document.activeElement; const keep = a && a.id; let caret = null; try { caret = a && a.selectionStart; } catch (e) {}
     app.innerHTML = view.name === "home" ? renderHome() : renderEvent();
     if (ui.sheet) app.insertAdjacentHTML("beforeend", renderSheet());
+    if (ui.photo && view.name === "event") app.insertAdjacentHTML("beforeend", renderPhoto());
     if (keep) { const el = document.getElementById(keep); if (el) { el.focus({ preventScroll: true }); try { if (caret != null) el.setSelectionRange(caret, caret); } catch (e) {} } }
   }
   const getEv = () => events.find((e) => e.id === view.id);
@@ -879,11 +1078,12 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       <header class="home-head"><div class="brand"><span class="tape" aria-hidden="true"></span>Stock USNE</div><h1>Mes événements</h1></header>
       <button class="btn primary block" type="button" data-act="new" style="min-height:54px;font-size:16px">+ Nouvel événement</button>
       ${list.length ? `<p class="section-lbl">${list.length} événement${list.length > 1 ? "s" : ""}</p><div class="evlist">${list.map((ev) => { const s = STEPS.find((x) => x.k === currentStep(ev)); return `
-        <button class="evcard" type="button" data-open="${ev.id}">
+        <div class="evwrap"><button class="evcard" type="button" data-open="${ev.id}">
           <div class="t"><h2>${esc(ev.name)}</h2><span class="d">${esc(fmtDate(ev.date))}</span></div>
           <div class="f">${ev.commande ? "N° " + esc(ev.commande) + " · " : ""}${ev.items.filter(inReq).length} articles demandés</div>
           ${miniSteps(ev)}${courseItems(ev).length ? `<div class="f" style="margin-top:-2px">Courses : ${courseItems(ev).filter((i) => leftNum(i) > 0).length} à acheter sur ${courseItems(ev).length}</div>` : ""}<span class="next">Continuer : ${s.n}. ${s.title} →</span>
-        </button>`; }).join("")}</div>`
+        </button><button type="button" class="evdel${ui.confirmHome === ev.id ? " confirm" : ""}" data-delhome="${ev.id}" aria-label="Supprimer l'événement ${esc(ev.name)}">${ICON.trash}${ui.confirmHome === ev.id ? "Confirmer" : "Supprimer"}</button></div>`; }).join("")}</div>
+      ${ui.confirmHome ? `<p class="intro" style="text-align:center">Touche « Confirmer » pour supprimer définitivement. Pense à exporter l'Excel avant.</p>` : ""}`
       : `<p class="section-lbl">Le déroulé, du bureau au retour au stock</p>
          <div class="flow"><div><i>1</i><b>Demande</b>ton Excel USNE</div><div><i>2</i><b>Réponse</b>le PDF du stock : dispo, tbc</div><div><i>3</i><b>Retrait</b>check au stock + dernière minute</div><div><i>4</i><b>Pré-check</b>seul, sur le lieu, avant de ranger</div><div><i>5</i><b>Retour</b>check avec le responsable du stock</div></div>`}
       <p class="version">Version ${APP_VERSION}</p>
@@ -893,32 +1093,33 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
   function stepper(id, field, value, sm, hint) {
     return `<div class="stepper${sm ? " sm" : ""}"><button type="button" data-step="-1" data-id="${id}" data-field="${field}" aria-label="Moins">−</button><input id="q-${field}-${id}" data-id="${id}" data-field="${field}" inputmode="decimal" value="${esc(blank(value) ? "" : value)}" placeholder="${esc(blank(hint) ? "0" : fmt(hint))}" aria-label="Quantité"><button type="button" data-step="1" data-id="${id}" data-field="${field}" aria-label="Plus">+</button></div>`;
   }
+  const nameHtml = (it) => `<div class="name">${esc(it.name)}${it.photos && it.photos.length ? ` <button type="button" class="eye" data-eye="${it.id}" aria-label="Voir la photo de ${esc(it.name)}">${ICON.eye}${it.photos.length > 1 ? it.photos.length : ""}</button>` : ""}</div>`;
   const chip = (s) => (s && s.label ? `<span class="chip ${s.cls}">${esc(s.label)}</span>` : "");
   const kindChip = (it) => `<button type="button" class="chip ${KIND[it.kind].cls}" data-kind="${it.id}" aria-label="Type : ${KIND[it.kind].label}, toucher pour changer">${KIND[it.kind].label}</button>`;
   function itemRow(ev, it, step) {
     const rem = it.rem ? `<span>${esc(it.rem)}</span>` : "";
-    if (step === "demande") return `<div class="item nt"><div><div class="name">${esc(it.name)}</div><div class="meta">${kindChip(it)}${it.extra ? chip({ label: "Ajout", cls: "info" }) : ""}${rem}</div></div>${stepper(it.id, "voulu", it.voulu)}</div>`;
+    if (step === "demande") return `<div class="item nt"><div>${nameHtml(it)}<div class="meta">${kindChip(it)}${it.extra ? chip({ label: "Ajout", cls: "info" }) : ""}${rem}</div></div>${stepper(it.id, "voulu", it.voulu)}</div>`;
     if (step === "reponse") {
       const r = repState(ev, it);
       const cls = r.cls === "bad" ? " alert" : r.k === "ok" ? " done" : r.cls === "warn" ? " warnbg" : "";
-      return `<div class="item nt${cls}"><div><div class="name">${esc(it.name)}</div><div class="meta"><span>Demandé <span class="q">${esc(fmt(it.voulu))}</span></span>${it.prevVoulu != null ? `<span>(avant ${esc(fmt(it.prevVoulu))})</span>` : ""}${chip(r)}${it.kind === "conso" ? chip({ label: "Consommable", cls: "info" }) : ""}</div></div>
+      return `<div class="item nt${cls}"><div>${nameHtml(it)}<div class="meta"><span>Demandé <span class="q">${esc(fmt(it.voulu))}</span></span>${it.prevVoulu != null ? `<span>(avant ${esc(fmt(it.prevVoulu))})</span>` : ""}${chip(r)}${it.kind === "conso" ? chip({ label: "Consommable", cls: "info" }) : ""}</div></div>
         <div class="side"><span class="meta" style="margin:0">Dispo</span>${stepper(it.id, "dispo", it.dispo, true, isNum(it.voulu) ? it.voulu : "")}</div></div>`;
     }
     if (step === "retrait") {
       const on = taken(it), s = outState(it), r = repState(ev, it), zero = !on && r.k === "zero";
       return `<div class="item${on ? " done" : ""}${zero ? " off" : ""}"><button type="button" class="tick" role="checkbox" aria-checked="${on}" data-tick="${it.id}" aria-label="Pris : ${esc(it.name)}">${ICON.check}</button>
-        <div><div class="name">${esc(it.name)}</div><div class="meta">${onlyExtra(it) ? "" : `<span>Demandé <span class="q">${esc(fmt(it.voulu))}</span></span>${isNum(it.dispo) ? `<span>Donné <span class="q">${esc(fmt(it.dispo))}</span></span>` : ""}`}${r.k !== "ok" && !onlyExtra(it) ? chip(r) : ""}${on ? chip(s) : onlyExtra(it) ? "" : liveDiff(shown(it, "out"), expected(it))}${it.kind === "conso" ? chip({ label: "Consommable", cls: "info" }) : ""}${rem}</div></div>
+        <div>${nameHtml(it)}<div class="meta">${onlyExtra(it) ? "" : `<span>Demandé <span class="q">${esc(fmt(it.voulu))}</span></span>${isNum(it.dispo) ? `<span>Donné <span class="q">${esc(fmt(it.dispo))}</span></span>` : ""}`}${r.k !== "ok" && !onlyExtra(it) ? chip(r) : ""}${on ? chip(s) : onlyExtra(it) ? "" : liveDiff(shown(it, "out"), expected(it))}${it.kind === "conso" ? chip({ label: "Consommable", cls: "info" }) : ""}${rem}</div></div>
         <div class="side">${stepper(it.id, "out", shown(it, "out"))}${onlyExtra(it) ? `<button type="button" class="mini" data-unextra="${it.id}">Retirer</button>` : ""}</div></div>`;
     }
     const pre = step === "precheck";
     const f = pre ? "pre" : "in";
     const b = pre ? preState(it) : backState(it);
     const preMeta = !pre && it.preOk && !blank(it.pre) ? `<span>Pré-check <span class="q">${esc(fmt(it.pre))}</span></span>` : "";
-    if (it.kind === "conso") return `<div class="item nt"><div><div class="name">${esc(it.name)}</div><div class="meta"><span>Sorti <span class="q">${esc(fmt(it.out))}</span></span>${preMeta}${chip(b)}</div></div><div class="side"><span class="meta" style="margin:0">${pre ? "Reste à rendre" : "Reste rendu"}</span>${stepper(it.id, f, blank(pre ? it.pre : consoIn(it)) ? 0 : pre ? it.pre : consoIn(it), true)}</div></div>`;
+    if (it.kind === "conso") return `<div class="item nt"><div>${nameHtml(it)}<div class="meta"><span>Sorti <span class="q">${esc(fmt(it.out))}</span></span>${preMeta}${chip(b)}</div></div><div class="side"><span class="meta" style="margin:0">${pre ? "Reste à rendre" : "Reste rendu"}</span>${stepper(it.id, f, blank(pre ? it.pre : consoIn(it)) ? 0 : pre ? it.pre : consoIn(it), true)}</div></div>`;
     const on = b.k !== "todo";
     const live = on ? chip(b) : liveDiff(shown(it, f), it.out);
     return `<div class="item${b.cls === "bad" ? " alert" : on ? " done" : ""}"><button type="button" class="tick" role="checkbox" aria-checked="${on}" data-tick="${it.id}" aria-label="${pre ? "Compté" : "Rendu"} : ${esc(it.name)}">${ICON.check}</button>
-      <div><div class="name">${esc(it.name)}</div><div class="meta"><span>Sorti <span class="q">${esc(fmt(it.out))}</span></span>${preMeta}${live}</div></div>${stepper(it.id, f, shown(it, f))}</div>`;
+      <div>${nameHtml(it)}<div class="meta"><span>Sorti <span class="q">${esc(fmt(it.out))}</span></span>${preMeta}${live}</div></div>${stepper(it.id, f, shown(it, f))}</div>`;
   }
   function stepSummary(ev, step) {
     if (step === "reponse") {
@@ -951,6 +1152,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     return `<header class="appbar"><div class="wrap">
         <div class="appbar-row"><button class="back" type="button" data-act="home" aria-label="Retour aux événements">${ICON.back}</button>
           <div class="ev-title"><h1>${esc(ev.name)}</h1><p>${esc(fmtDate(ev.date, true))}${ev.commande ? " · N° " + esc(ev.commande) : ""}</p></div>
+          <button class="iconbtn" type="button" data-act="photo" aria-label="Photo : repérer les articles">${ICON.camera}</button>
           <button class="iconbtn" type="button" data-act="files" aria-label="Importer, exporter">${ICON.files}</button></div>
         <div class="modes" role="group" aria-label="Partie"><button type="button" data-mode="materiel" aria-pressed="${view.mode !== "courses"}">Matériel</button><button type="button" data-mode="courses" aria-pressed="${view.mode === "courses"}">Courses${toBuy ? `<span class="n">${toBuy}</span>` : ""}</button></div>`;
   }
@@ -976,7 +1178,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
         const on = !!it.stkOk, sv = shown_(it, "stk"), rest = cRestWith(it, sv);
         const info = isNum(sv) && toNum(sv) > 0 ? (isNum(rest) && rest === 0 ? chip({ label: "Tout au stock", cls: "good" }) : chip({ label: "À acheter " + withUnit(rest, it), cls: "warn" })) : on ? chip({ label: "À acheter " + withUnit(rest, it), cls: "warn" }) : "";
         return `<div class="item${on ? " done" : ""}"><button type="button" class="tick" role="checkbox" aria-checked="${on}" data-tick="${it.id}" aria-label="Vérifié au stock : ${esc(it.name)}">${ICON.check}</button>
-          <div><div class="name">${esc(it.name)}</div><div class="meta"><span>Demandé <span class="q">${esc(withUnit(cNeed(it), it))}</span></span>${sm}${info}</div></div>
+          <div>${nameHtml(it)}<div class="meta"><span>Demandé <span class="q">${esc(withUnit(cNeed(it), it))}</span></span>${sm}${info}</div></div>
           <div class="side"><span class="meta" style="margin:0">Pris au stock</span>${stepper(it.id, "stk", sv, true)}${rm}</div></div>`;
       }
       if (step === "cachat") {
@@ -984,11 +1186,11 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
         const shopBtn = `<button type="button" class="chip shopchip" data-shop="${it.id}" aria-label="Magasin : ${esc(SHOPS[shopOf(it)])}, toucher pour changer">${esc(SHOPS[shopOf(it)])}</button>`;
         const stc = on ? (leftNum(it) > 0 ? chip({ label: "Reste " + withUnit(cLeft(it), it), cls: "bad" }) : "") : liveDiff(sv, x);
         return `<div class="item${on ? (leftNum(it) > 0 ? " alert" : " done") : ""}"><button type="button" class="tick" role="checkbox" aria-checked="${on}" data-tick="${it.id}" aria-label="Acheté : ${esc(it.name)}">${ICON.check}</button>
-          <div><div class="name">${esc(it.name)}</div><div class="meta"><span>À acheter <span class="q">${esc(withUnit(x, it))}</span></span>${cStk(it) > 0 ? `<span>Stock <span class="q">${esc(fmt(cStk(it)))}</span></span>` : ""}${shopBtn}${sm}${stc}</div></div>
+          <div>${nameHtml(it)}<div class="meta"><span>À acheter <span class="q">${esc(withUnit(x, it))}</span></span>${cStk(it) > 0 ? `<span>Stock <span class="q">${esc(fmt(cStk(it)))}</span></span>` : ""}${shopBtn}${sm}${stc}</div></div>
           <div class="side">${stepper(it.id, "buy", sv)}</div></div>`;
       }
       const l = leftNum(it);
-      return `<div class="item nt${l > 0 ? " alert" : " done"}"><div><div class="name">${esc(it.name)}</div><div class="meta"><span>Demandé <span class="q">${esc(withUnit(cNeed(it), it))}</span></span><span>Stock <span class="q">${it.stkOk ? esc(fmt(it.stk)) : "–"}</span></span><span>Acheté <span class="q">${it.buyOk ? esc(fmt(it.buy)) : "–"}</span></span>${sm}</div></div>
+      return `<div class="item nt${l > 0 ? " alert" : " done"}"><div>${nameHtml(it)}<div class="meta"><span>Demandé <span class="q">${esc(withUnit(cNeed(it), it))}</span></span><span>Stock <span class="q">${it.stkOk ? esc(fmt(it.stk)) : "–"}</span></span><span>Acheté <span class="q">${it.buyOk ? esc(fmt(it.buy)) : "–"}</span></span>${sm}</div></div>
         ${chip(l > 0 ? { label: "Reste " + withUnit(cLeft(it), it), cls: "bad" } : { label: cEtat(it), cls: "good" })}</div>`;
     };
     const groups = keys.map((k) => {
@@ -1095,6 +1297,13 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
           <div class="field"><label for="a-rem">Remarque</label><input id="a-rem" placeholder="facultatif" autocomplete="off"></div></div>
           <button class="btn primary block" type="submit">Ajouter</button>
           <button class="btn ghost block" type="button" data-act="close">Fermer</button></form>`;
+    } else if (s === "view") {
+      const it = getEv().items.find((i) => i.id === ui.viewId);
+      const ph = (it && it.photos) || [];
+      body = `<h2>${esc(it ? it.name : "")}</h2><p>${esc(it ? (SHEET_LABEL[it.sheet] || it.sheet) : "")}${it && !blank(it.voulu) ? " · demandé " + esc(fmt(it.voulu)) : ""}</p>
+        <div class="ph-grid">${ph.map((src, k) => `<figure><img src="${src}" alt="Photo ${k + 1} de ${esc(it.name)}"><button type="button" class="mini" data-phdel="${k}">Supprimer</button></figure>`).join("") || "<p>Pas encore de photo.</p>"}</div>
+        <div class="sheet-actions"><button class="btn block" type="button" data-act="phitem">${ICON.camera} Ajouter une photo de cet article</button>
+        <button class="btn ghost block" type="button" data-act="close">Fermer</button></div>`;
     } else if (s === "cadd") {
       body = `<h2>Ajouter aux courses</h2><p>Un article alimentaire ou à acheter qui n'est pas dans la demande.</p>
         <form id="caddForm" class="sheet-actions" style="gap:12px"><div class="fields">
@@ -1149,6 +1358,20 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     if (e.target.matches("[data-scrim]")) return closeSheet();
     const t = e.target.closest("button"); if (!t) return;
     const d = t.dataset;
+    if (!d.delhome && ui.confirmHome) { ui.confirmHome = null; if (view.name === "home" && !d.open && !d.act) return render(); }
+    if (d.delhome) {
+      if (ui.confirmHome !== d.delhome) { ui.confirmHome = d.delhome; return render(); }
+      const ev = events.find((x) => x.id === d.delhome); events = events.filter((x) => x.id !== d.delhome); dbDel(d.delhome); ui.confirmHome = null;
+      toast("Événement supprimé : " + (ev ? ev.name : "")); return render();
+    }
+    if (d.eye) { ui.viewId = d.eye; ui.sheet = "view"; return render(); }
+    if (d.phdel != null && d.phdel !== undefined && ui.sheet === "view") { const it = byId(ui.viewId); it.photos.splice(Number(d.phdel), 1); persist(getEv(), true); toast("Photo supprimée."); return render(); }
+    if (d.frame) { ui.photo.sel = d.frame; ui.photo.q = ""; render(); const pk = $("#phPick"); if (pk) pk.scrollIntoView({ behavior: "smooth", block: "nearest" }); return; }
+    if (d.link && ui.photo) {
+      const f = ui.photo.frames.find((x) => x.id === ui.photo.sel); const it = byId(d.link);
+      if (f && it) { f.itemId = it.id; if (!it.inReq && !taken(it)) { it.inReq = true; if (!requested(it.voulu)) it.voulu = 1; it.extra = true; persist(getEv(), true); toast(it.name + " ajouté à la liste."); } }
+      ui.photo.sel = null; ui.photo.q = ""; return render();
+    }
     if (d.open) { const ev = events.find((x) => x.id === d.open); return go({ name: "event", id: ev.id, mode: "materiel", step: currentStep(ev) }); }
     if (d.mode) { ui.keep.clear(); const ev = getEv(); view.mode = d.mode; view.step = d.mode === "courses" ? cCurrent(ev) : currentStep(ev); ui.filter = ""; ui.query = ""; render(); return window.scrollTo(0, 0); }
     if (d.nocourse) { const it = byId(d.nocourse); it.noCourse = true; it.course = false; toast(it.name + " retiré des courses."); return changed(); }
@@ -1186,6 +1409,22 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       case "files": return openSheet("files");
       case "import": ui.sheet = null; render(); return pickFile("event");
       case "copy": return copyText(manquesText(getEv()));
+      case "photo": pendingPhoto = null; return $("#photoInput").click();
+      case "phretake": pendingPhoto = null; return $("#photoInput").click();
+      case "phclose": return closePhoto();
+      case "phsave": return savePhotoFrames();
+      case "phadd": {
+        const ev = getEv(); const f = ui.photo.frames.find((x) => x.id === ui.photo.sel); if (!f) return;
+        const name = t.dataset.name; const sh = ($("#phsheet") && $("#phsheet").value) || "UST";
+        let it = findItem(ev, sh, name);
+        if (!it) { it = { id: uid(), sheet: sh, row: null, name, kind: kindFor(sh, name), voulu: 1, dispo: "", answered: false, out: "", pre: "", in: "", rem: "Ajouté depuis une photo", extra: true, inReq: true }; ev.items.push(it); }
+        else { it.inReq = true; if (!requested(it.voulu)) it.voulu = 1; }
+        f.itemId = it.id; ui.photo.sel = null; ui.photo.q = ""; persist(ev, true);
+        toast("Ajouté à la liste (" + sh + ") : " + name); return render();
+      }
+      case "phunlink": { const f = ui.photo.frames.find((x) => x.id === ui.photo.sel); if (f) f.itemId = null; return render(); }
+      case "phdelframe": { ui.photo.frames = ui.photo.frames.filter((x) => x.id !== ui.photo.sel); ui.photo.sel = null; return render(); }
+      case "phitem": pendingPhoto = { item: ui.viewId }; return $("#photoInput").click();
       case "ccopy": return copyText(coursesText(getEv()));
       case "cpdf": return exportCoursesPdf(getEv());
       case "cxlsx": return exportCoursesXlsx(getEv());
@@ -1201,6 +1440,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
   app.addEventListener("input", (e) => {
     const el = e.target;
     if (el.id === "search") { ui.query = el.value; return render(); }
+    if (el.id === "phq" && ui.photo) { ui.photo.q = el.value; return render(); }
     if (el.id === "a-q") { ui.addQuery = el.value; ui.addSel = null; return render(); }
     if (el.dataset && el.dataset.field) {
       const it = byId(el.dataset.id); const v = el.value.trim(); const f = el.dataset.field; ui.keep.add(it.id);

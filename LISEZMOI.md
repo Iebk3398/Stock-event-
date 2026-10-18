@@ -41,6 +41,19 @@ Les articles de type *Hors stock* de la demande (chips, menthe, poulet…), plus
 3. **Bilan** : pour chaque article, demandé / pris au stock / acheté / reste. Ex. chips : 2 demandées → 1 du stock, 1 achetée.
    Export **PDF compte rendu**, **Excel « Courses »**, et **Copier** la liste de ce qui reste (WhatsApp).
 
+## Photos (icône appareil photo en haut de l'événement)
+1. Prends une photo avec plusieurs articles : l'app encadre les objets qu'elle reconnaît (couteau, cuillère, bol, verre, bouteille, ciseaux, chaise, table…).
+   Vert = lié à un article de ta liste. Jaune = pas sûr : touche le cadre, choisis parmi les suggestions ou cherche l'article.
+2. Glisse le doigt sur la photo pour encadrer toi-même un article (ex. un couteau à dents), puis choisis-le.
+3. Pas dans ta liste ? L'app propose les articles qui y ressemblent (à valider) ou « + Ajouter à la liste ».
+4. *Enregistrer* : chaque cadre devient la photo de son article. L'icône œil à côté du nom l'affiche, à toutes les étapes.
+
+La reconnaissance tourne sur le téléphone (gratuit). La 1re fois, il faut du réseau pour télécharger le modèle (~6 Mo), ensuite ça marche hors ligne.
+Les photos restent sur le téléphone (elles ne sont pas dans l'Excel).
+
+## Supprimer un événement
+Sur l'accueil, *Supprimer* sur la carte de l'événement, puis *Confirmer*.
+
 ## Fichiers (bouton en haut à droite, à toutes les étapes)
 - **Exporter l'Excel** au format USNE d'origine : Quantité, Disponible, check out, check in remplis, ajouts en bas de leur onglet, plus un onglet « Suivi événement ».
 - **PDF** de l'étape : demande, manques, bon de sortie ou bon de retour.
