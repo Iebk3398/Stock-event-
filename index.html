@@ -180,15 +180,15 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
 .evdel { position: absolute; right: 10px; bottom: 9px; border: 0; background: none; color: var(--muted); font-size: 13px; font-weight: 600; padding: 6px 8px; border-radius: 9px; display: flex; align-items: center; gap: 4px; }
 .evdel svg { width: 16px; height: 16px; }
 .evdel.confirm { background: var(--bad); color: #fff; }
-.eye { border: 1px solid var(--line); background: var(--sunk); color: var(--info); border-radius: 99px; padding: 1px 7px 1px 5px; margin-left: 6px; display: inline-flex; align-items: center; gap: 3px; vertical-align: 1px; font-size: 11.5px; font-weight: 700; font-family: var(--f-num); }
+.eye { border: 1px solid var(--info); background: var(--info-bg); color: var(--info); border-radius: 99px; padding: 1px 7px 1px 5px; margin-left: 6px; display: inline-flex; align-items: center; gap: 3px; vertical-align: 1px; font-size: 11.5px; font-weight: 700; font-family: var(--f-num); }
 .eye svg { width: 15px; height: 15px; }
 .photo { position: fixed; inset: 0; z-index: 60; background: #0d1117; color: #e7ecf2; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); }
 .ph-top { display: flex; align-items: center; gap: 8px; padding: 8px max(12px, env(safe-area-inset-right, 0px)) 8px max(12px, env(safe-area-inset-left, 0px)); }
 .ph-top b { flex: 1; text-align: center; font-family: var(--f-display); font-size: 18px; text-transform: uppercase; letter-spacing: .03em; }
 .ph-top button { border: 0; background: rgba(255,255,255,.1); color: #fff; border-radius: 10px; padding: 8px 12px; font-weight: 600; font-size: 14px; }
-.ph-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 max(12px, env(safe-area-inset-right, 0px)) 16px max(12px, env(safe-area-inset-left, 0px)); display: grid; gap: 12px; align-content: start; }
-.ph-stage { position: relative; margin: 0 auto; touch-action: none; user-select: none; -webkit-user-select: none; border-radius: 10px; overflow: hidden; background: #000; max-width: 100%; }
-.ph-stage img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; -webkit-touch-callout: none; }
+.ph-scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 max(12px, env(safe-area-inset-right, 0px)) 16px max(12px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 12px; }
+.ph-stage { position: relative; margin: 0 auto; touch-action: none; user-select: none; -webkit-user-select: none; border-radius: 10px; overflow: hidden; background: #000; flex: none; }
+.ph-stage img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: fill; pointer-events: none; -webkit-touch-callout: none; }
 .pf { position: absolute; border: 2.5px solid #f2b705; border-radius: 6px; background: rgba(242,183,5,.08); padding: 0; min-width: 18px; min-height: 18px; }
 .pf.ok { border-color: #3ddc84; background: rgba(61,220,132,.10); }
 .pf.sel { box-shadow: 0 0 0 3px #fff; }
@@ -209,6 +209,19 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
 .ph-row button { border: 1px solid #2c3641; background: none; color: #e7ecf2; border-radius: 10px; padding: 8px 12px; font-weight: 600; font-size: 14px; }
 .ph-row button.danger { color: #ff8a80; }
 .ph-bar { padding: 10px max(12px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); border-top: 1px solid #2c3641; }
+.ph-review { display: grid; gap: 8px; }
+.ph-review .hd { display: flex; align-items: center; gap: 8px; }
+.ph-review .hd h3 { margin: 0; flex: 1; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #9aa7b6; }
+.ph-item { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: center; background: #1a212a; border: 1px solid #2c3641; border-radius: 12px; padding: 8px; }
+.ph-item.ok { border-color: #3ddc84; }
+.ph-item img { width: 52px; height: 52px; object-fit: cover; border-radius: 8px; background: #000; }
+.ph-item .t { font-size: 14px; min-width: 0; }
+.ph-item .t b { display: block; font-size: 15px; overflow-wrap: anywhere; }
+.ph-item .t small { color: #9aa7b6; }
+.ph-item .a { display: grid; gap: 6px; }
+.ph-item .a button { border: 1px solid #2c3641; background: none; color: #e7ecf2; border-radius: 9px; padding: 7px 10px; font-weight: 700; font-size: 13px; white-space: nowrap; }
+.ph-item .a button.go { background: #3ddc84; border-color: #3ddc84; color: #08210f; }
+.ph-acc { border: 0; background: #3ddc84; color: #08210f; border-radius: 9px; padding: 7px 12px; font-weight: 700; font-size: 13px; }
 .ph-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
 .ph-grid figure { margin: 0; display: grid; gap: 4px; justify-items: center; }
 .ph-grid img { width: 100%; border-radius: 10px; border: 1px solid var(--line); background: var(--sunk); }
@@ -278,7 +291,7 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
 (function () {
   "use strict";
   /* ================= référentiel ================= */
-  const APP_VERSION = "13";
+  const APP_VERSION = "14";
   const EXTRA_TAG = "Ajout dernière minute";
   const SUIVI = "Suivi événement";
   const SHEET_LABEL = { UST: "Ustensiles", SPT: "Sport", EMB: "Emballage", NET: "Nettoyage", It: "IT / audio / vidéo", AUTRE: "Mobilier et courses" };
@@ -965,7 +978,10 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
           const free = cands.filter((i) => !used.has(i.id));
           const sure = pr.score >= 0.6 && cands.length === 1 && free.length === 1;
           if (sure) used.add(free[0].id);
-          ui.photo.frames.push({ id: uid(), x, y, w, h, cls: pr.class, label: COCO_FR[pr.class] ? COCO_FR[pr.class][0] : pr.class, score: pr.score, itemId: sure ? free[0].id : null, cand: cands.map((i) => i.id) });
+          const prop = (free[0] || cands[0]) ? (free[0] || cands[0]).id : (maybeFor(ev, COCO_FR[pr.class] ? COCO_FR[pr.class][0] : pr.class, new Set())[0] || {}).id || null;
+          if (prop) used.add(prop);
+          const fr = { id: uid(), x, y, w, h, cls: pr.class, label: COCO_FR[pr.class] ? COCO_FR[pr.class][0] : pr.class, score: pr.score, itemId: null, prop, sure, cand: cands.map((i) => i.id), thumb: cropToDataUrl(c, x, y, w, h, 120) };
+          ui.photo.frames.push(fr);
         }
         ui.photo.status = "done";
       } catch (e) { console.warn(e); if (ui.photo) ui.photo.status = "nomodel"; }
@@ -976,27 +992,37 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     try { const c = await fileToCanvas(file, 640); it.photos = [...(it.photos || []), c.toDataURL("image/jpeg", 0.78)].slice(-6); persist(getEv(), true); toast("Photo ajoutée : " + it.name); render(); }
     catch (e) { toast("Impossible d'ouvrir cette photo."); }
   }
-  function savePhotoFrames() {
-    const P = ui.photo, ev = getEv(); let n = 0;
-    for (const f of P.frames) {
-      const it = f.itemId && ev.items.find((i) => i.id === f.itemId); if (!it) continue;
+  // Chaque cadre lié = la photo de son article, enregistrée tout de suite (l'œil apparaît à côté du nom).
+  function detachCrop(f) {
+    if (!f.ref) return; const it = getEv().items.find((i) => i.id === f.ref.itemId);
+    if (it && it.photos) it.photos = it.photos.filter((src) => src !== f.ref.src); f.ref = null;
+  }
+  function setLink(f, itemId) {
+    const P = ui.photo, ev = getEv(); detachCrop(f); f.itemId = itemId || null;
+    const it = itemId && ev.items.find((i) => i.id === itemId);
+    if (it && photoCanvas) {
       const pad = 0.06; const x = Math.max(0, f.x - f.w * pad), y = Math.max(0, f.y - f.h * pad);
       const w = Math.min(P.w - x, f.w * (1 + 2 * pad)), h = Math.min(P.h - y, f.h * (1 + 2 * pad));
-      it.photos = [...(it.photos || []), cropToDataUrl(photoCanvas, x, y, w, h, 480)].slice(-6); n++;
+      const src = cropToDataUrl(photoCanvas, x, y, w, h, 480);
+      it.photos = [...(it.photos || []), src].slice(-6); f.ref = { itemId: it.id, src };
     }
-    persist(ev, true); closePhoto(); toast(n ? `${n} photo${n > 1 ? "s" : ""} enregistrée${n > 1 ? "s" : ""}. Touche l'œil à côté d'un article pour la voir.` : "Aucun cadre lié : rien n'a été enregistré.");
+    persist(ev, true);
+  }
+  function savePhotoFrames() {
+    const n = ui.photo.frames.filter((f) => f.ref).length; closePhoto();
+    toast(n ? `${n} photo${n > 1 ? "s" : ""} liée${n > 1 ? "s" : ""}. Touche l'œil à côté d'un article pour la voir.` : "Aucun cadre lié.");
   }
   function closePhoto() { if (ui.photo && ui.photo.src) URL.revokeObjectURL(ui.photo.src); ui.photo = null; photoCanvas = null; render(); }
   function renderPhoto() {
     const P = ui.photo, ev = getEv(); if (!ev) return "";
     const itemOf = (f) => f.itemId && ev.items.find((i) => i.id === f.itemId);
     const linked = P.frames.filter(itemOf).length;
-    const frames = P.frames.map((f) => { const it = itemOf(f); return `<button type="button" class="pf${it ? " ok" : ""}${P.sel === f.id ? " sel" : ""}${f.y / P.h < 0.06 ? " top" : ""}" data-frame="${f.id}" style="left:${(f.x / P.w) * 100}%;top:${(f.y / P.h) * 100}%;width:${(f.w / P.w) * 100}%;height:${(f.h / P.h) * 100}%" aria-label="${esc(it ? it.name : "Objet à identifier")}"><span>${esc(it ? it.name : "? " + (f.label || "à lier"))}</span></button>`; }).join("");
+    const frames = P.frames.map((f) => { const it = itemOf(f); return `<button type="button" class="pf${it ? " ok" : ""}${P.sel === f.id ? " sel" : ""}${f.y / P.h < 0.06 ? " top" : ""}" data-frame="${f.id}" style="left:${(f.x / P.w) * 100}%;top:${(f.y / P.h) * 100}%;width:${(f.w / P.w) * 100}%;height:${(f.h / P.h) * 100}%" aria-label="${esc(it ? it.name : "Objet à identifier")}"><span>${esc(it ? it.name : f.prop && ev.items.find((i) => i.id === f.prop) ? "? " + ev.items.find((i) => i.id === f.prop).name : "? " + (f.label || "à lier"))}</span></button>`; }).join("");
     const unl = P.frames.length - linked;
     const status = P.status === "detect" ? "Reconnaissance des objets… (la 1re fois, il faut du réseau pour télécharger le modèle)"
       : P.status === "nomodel" ? "Reconnaissance indisponible (pas de réseau la 1re fois ?). Glisse le doigt sur la photo pour encadrer chaque article, puis choisis-le."
       : !P.frames.length ? "Aucun objet reconnu. Glisse le doigt sur la photo pour encadrer un article (ex. un couteau à dents), puis choisis-le dans la liste."
-      : `${P.frames.length} cadre${P.frames.length > 1 ? "s" : ""} · ${linked} lié${linked > 1 ? "s" : ""}${unl ? ` · ${unl} à identifier (en jaune)` : ""}. Touche un cadre pour le lier, ou glisse le doigt pour en ajouter un.`;
+      : `${P.frames.length} objet${P.frames.length > 1 ? "s" : ""} repéré${P.frames.length > 1 ? "s" : ""} · ${linked} validé${linked > 1 ? "s" : ""}. Vérifie les propositions ci-dessous. Glisse le doigt sur la photo pour encadrer un article oublié.`;
     const sel = P.frames.find((f) => f.id === P.sel);
     let pick = "";
     if (sel) {
@@ -1019,16 +1045,33 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
         <div class="ph-row">${cur ? `<button type="button" data-act="phunlink">Retirer le lien</button>` : ""}<button type="button" class="danger" data-act="phdelframe">Supprimer le cadre</button></div>
       </div>`;
     }
-    const wcss = `width:min(100%, calc(60vh * ${(P.w / P.h).toFixed(4)}))`;
+    const maxW = Math.min(window.innerWidth, 760) - 24, maxH = Math.max(200, window.innerHeight * 0.52);
+    let W = maxW, H = (W * P.h) / P.w; if (H > maxH) { H = maxH; W = (H * P.w) / P.h; }
+    const wcss = `width:${Math.round(W)}px;height:${Math.round(H)}px`;
     return `<div class="photo" role="dialog" aria-modal="true" aria-label="Repérer les articles sur la photo">
-      <div class="ph-top"><button type="button" data-act="phclose">Fermer</button><b>Photo</b><button type="button" data-act="phretake">Autre photo</button></div>
+      <div class="ph-top"><button type="button" data-act="phsave">Fermer</button><b>Photo</b><button type="button" data-act="phretake">Autre photo</button></div>
       <div class="ph-scroll">
-        <div class="ph-stage" id="phStage" style="aspect-ratio:${P.w}/${P.h};${wcss}"><img src="${P.src}" alt="Photo prise" draggable="false">${frames}<div class="pf draw" id="phDraw" hidden></div></div>
+        <div class="ph-stage" id="phStage" style="${wcss}"><img src="${P.src}" alt="Photo prise" draggable="false">${frames}<div class="pf draw" id="phDraw" hidden></div></div>
         <p class="ph-status">${esc(status)}</p>
-        ${pick}
+        ${pick || reviewList(P, ev)}
       </div>
-      <div class="ph-bar"><button type="button" class="btn primary block" data-act="phsave" ${linked ? "" : "disabled"}>Enregistrer ${linked} photo${linked > 1 ? "s" : ""}</button></div>
+      <div class="ph-bar"><button type="button" class="btn primary block" data-act="phsave">Terminé${linked ? ` · ${linked} photo${linked > 1 ? "s" : ""} liée${linked > 1 ? "s" : ""}` : ""}</button></div>
     </div>`;
+  }
+  function reviewList(P, ev) {
+    if (!P.frames.length) return "";
+    const nameOf = (id) => { const i = id && ev.items.find((x) => x.id === id); return i ? i.name : ""; };
+    const pending = P.frames.filter((f) => !f.itemId && f.prop && nameOf(f.prop));
+    return `<div class="ph-review"><div class="hd"><h3>Objets repérés</h3>${pending.length > 1 ? `<button type="button" class="ph-acc" data-act="phall">Tout valider (${pending.length})</button>` : ""}</div>
+      ${P.frames.map((f) => {
+        const linkedName = nameOf(f.itemId), propName = nameOf(f.prop);
+        const what = f.cls ? `${esc(f.label)} <small>${Math.round(f.score * 100)} %</small>` : "Cadre à la main";
+        const line = linkedName ? `<b>✓ ${esc(linkedName)}</b>` : propName ? `<b>${esc(propName)} ?</b>` : `<b>À identifier</b>`;
+        const acts = linkedName ? `<button type="button" data-frame="${f.id}">Modifier</button>`
+          : propName ? `<button type="button" class="go" data-accept="${f.id}">Valider</button><button type="button" data-frame="${f.id}">Changer</button>`
+          : `<button type="button" class="go" data-frame="${f.id}">Choisir</button>`;
+        return `<div class="ph-item${linkedName ? " ok" : ""}">${f.thumb ? `<img src="${f.thumb}" alt="">` : "<span></span>"}<div class="t">${line}<small>${what}</small></div><div class="a">${acts}</div></div>`;
+      }).join("")}</div>`;
   }
   // Dessiner un cadre : glisser le doigt sur la photo.
   function stagePoint(e) { const st = $("#phStage"); const r = st.getBoundingClientRect(); return { x: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), y: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)) }; }
@@ -1047,11 +1090,13 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     const a = drawStart, b = stagePoint(e); drawStart = null; const P = ui.photo;
     const w = Math.abs(b.x - a.x), h = Math.abs(b.y - a.y);
     if (w < 0.03 || h < 0.03) { P.sel = null; return render(); }
-    const f = { id: uid(), x: Math.min(a.x, b.x) * P.w, y: Math.min(a.y, b.y) * P.h, w: w * P.w, h: h * P.h, cls: null, label: "à lier", score: 0, itemId: null, cand: [] };
+    const f = { id: uid(), x: Math.min(a.x, b.x) * P.w, y: Math.min(a.y, b.y) * P.h, w: w * P.w, h: h * P.h, cls: null, label: "cadre à la main", score: 0, itemId: null, prop: null, cand: [] };
+    if (photoCanvas) f.thumb = cropToDataUrl(photoCanvas, f.x, f.y, f.w, f.h, 120);
     P.frames.push(f); P.sel = f.id; P.q = ""; render();
     const pk = $("#phPick"); if (pk) pk.scrollIntoView({ behavior: "smooth", block: "nearest" });
   });
   document.addEventListener("pointercancel", () => { drawStart = null; const d = $("#phDraw"); if (d) d.hidden = true; });
+  window.addEventListener("resize", () => { if (ui.photo) render(); });
   $("#photoInput").addEventListener("change", (e) => {
     const f = e.target.files[0]; e.target.value = ""; if (!f) return;
     if (pendingPhoto && pendingPhoto.item) { const it = getEv().items.find((i) => i.id === pendingPhoto.item); pendingPhoto = null; if (it) addItemPhoto(it, f); return; }
@@ -1366,10 +1411,15 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
     }
     if (d.eye) { ui.viewId = d.eye; ui.sheet = "view"; return render(); }
     if (d.phdel != null && d.phdel !== undefined && ui.sheet === "view") { const it = byId(ui.viewId); it.photos.splice(Number(d.phdel), 1); persist(getEv(), true); toast("Photo supprimée."); return render(); }
+    if (d.accept && ui.photo) {
+      const f = ui.photo.frames.find((x) => x.id === d.accept); const it = f && byId(f.prop);
+      if (f && it) { if (!it.inReq && !taken(it)) { it.inReq = true; if (!requested(it.voulu)) it.voulu = 1; it.extra = true; } setLink(f, it.id); }
+      return render();
+    }
     if (d.frame) { ui.photo.sel = d.frame; ui.photo.q = ""; render(); const pk = $("#phPick"); if (pk) pk.scrollIntoView({ behavior: "smooth", block: "nearest" }); return; }
     if (d.link && ui.photo) {
       const f = ui.photo.frames.find((x) => x.id === ui.photo.sel); const it = byId(d.link);
-      if (f && it) { f.itemId = it.id; if (!it.inReq && !taken(it)) { it.inReq = true; if (!requested(it.voulu)) it.voulu = 1; it.extra = true; persist(getEv(), true); toast(it.name + " ajouté à la liste."); } }
+      if (f && it) { if (!it.inReq && !taken(it)) { it.inReq = true; if (!requested(it.voulu)) it.voulu = 1; it.extra = true; toast(it.name + " ajouté à la liste."); } setLink(f, it.id); }
       ui.photo.sel = null; ui.photo.q = ""; return render();
     }
     if (d.open) { const ev = events.find((x) => x.id === d.open); return go({ name: "event", id: ev.id, mode: "materiel", step: currentStep(ev) }); }
@@ -1413,17 +1463,18 @@ button.chip::after { content: " ⇄"; opacity: .6; font-weight: 600; }
       case "phretake": pendingPhoto = null; return $("#photoInput").click();
       case "phclose": return closePhoto();
       case "phsave": return savePhotoFrames();
+      case "phall": { for (const f of ui.photo.frames) { const it = !f.itemId && f.prop && byId(f.prop); if (it) { if (!it.inReq && !taken(it)) { it.inReq = true; if (!requested(it.voulu)) it.voulu = 1; it.extra = true; } setLink(f, it.id); } } toast("Toutes les propositions sont validées."); return render(); }
       case "phadd": {
         const ev = getEv(); const f = ui.photo.frames.find((x) => x.id === ui.photo.sel); if (!f) return;
         const name = t.dataset.name; const sh = ($("#phsheet") && $("#phsheet").value) || "UST";
         let it = findItem(ev, sh, name);
         if (!it) { it = { id: uid(), sheet: sh, row: null, name, kind: kindFor(sh, name), voulu: 1, dispo: "", answered: false, out: "", pre: "", in: "", rem: "Ajouté depuis une photo", extra: true, inReq: true }; ev.items.push(it); }
         else { it.inReq = true; if (!requested(it.voulu)) it.voulu = 1; }
-        f.itemId = it.id; ui.photo.sel = null; ui.photo.q = ""; persist(ev, true);
+        setLink(f, it.id); ui.photo.sel = null; ui.photo.q = "";
         toast("Ajouté à la liste (" + sh + ") : " + name); return render();
       }
-      case "phunlink": { const f = ui.photo.frames.find((x) => x.id === ui.photo.sel); if (f) f.itemId = null; return render(); }
-      case "phdelframe": { ui.photo.frames = ui.photo.frames.filter((x) => x.id !== ui.photo.sel); ui.photo.sel = null; return render(); }
+      case "phunlink": { const f = ui.photo.frames.find((x) => x.id === ui.photo.sel); if (f) setLink(f, null); return render(); }
+      case "phdelframe": { const f = ui.photo.frames.find((x) => x.id === ui.photo.sel); if (f) { detachCrop(f); persist(getEv(), true); } ui.photo.frames = ui.photo.frames.filter((x) => x.id !== ui.photo.sel); ui.photo.sel = null; return render(); }
       case "phitem": pendingPhoto = { item: ui.viewId }; return $("#photoInput").click();
       case "ccopy": return copyText(coursesText(getEv()));
       case "cpdf": return exportCoursesPdf(getEv());

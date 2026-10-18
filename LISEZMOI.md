@@ -42,11 +42,13 @@ Les articles de type *Hors stock* de la demande (chips, menthe, poulet…), plus
    Export **PDF compte rendu**, **Excel « Courses »**, et **Copier** la liste de ce qui reste (WhatsApp).
 
 ## Photos (icône appareil photo en haut de l'événement)
-1. Prends une photo avec plusieurs articles : l'app encadre les objets qu'elle reconnaît (couteau, cuillère, bol, verre, bouteille, ciseaux, chaise, table…).
-   Vert = lié à un article de ta liste. Jaune = pas sûr : touche le cadre, choisis parmi les suggestions ou cherche l'article.
-2. Glisse le doigt sur la photo pour encadrer toi-même un article (ex. un couteau à dents), puis choisis-le.
-3. Pas dans ta liste ? L'app propose les articles qui y ressemblent (à valider) ou « + Ajouter à la liste ».
-4. *Enregistrer* : chaque cadre devient la photo de son article. L'icône œil à côté du nom l'affiche, à toutes les étapes.
+1. Prends **une photo de tout** : l'app repère les objets (couteau, cuillère, bol, verre, bouteille, ciseaux, chaise, table…)
+   et propose pour chacun l'article de ta liste qui correspond.
+2. **Objets repérés** (sous la photo) : *Valider* une proposition, *Changer* pour en choisir une autre, ou *Tout valider*.
+   Rien n'est lié sans ta validation.
+3. Glisse le doigt sur la photo pour encadrer un article oublié (ex. un couteau à dents), puis choisis-le.
+4. Pas dans ta liste ? L'app propose les articles qui y ressemblent ou « + Ajouter à la liste ».
+5. Dès qu'un objet est validé, sa photo est enregistrée : l'**œil** apparaît à côté du nom de l'article, à toutes les étapes.
 
 La reconnaissance tourne sur le téléphone (gratuit). La 1re fois, il faut du réseau pour télécharger le modèle (~6 Mo), ensuite ça marche hors ligne.
 Les photos restent sur le téléphone (elles ne sont pas dans l'Excel).
